@@ -164,3 +164,18 @@ def test_the_chain_reports_n_zero_rather_than_pretending(record_home):
     assert result.source == "none"
     assert result.n == 0
     assert len(result.tried) == 3
+
+
+def test_slurmpast_is_scoped_to_the_caller_not_the_cluster():
+    """An Operator account can see every user; a fit must still only see its own runs."""
+    runner = FakeRunner().on("slurmpast", stdout=SLURMPAST)
+    from_slurmpast("software", runner, user="youzhi")
+    argv = runner.calls[0]
+    assert "-u" in argv
+    assert argv[argv.index("-u") + 1] == "youzhi"
+
+
+def test_the_chain_passes_the_user_through_to_both_slurm_sources():
+    runner = FakeRunner().on("slurmpast", stdout='{"workloads": []}').on("sacct", stdout="")
+    history("nope", runner=runner, user="someone-else")
+    assert all("someone-else" in " ".join(c) for c in runner.calls)

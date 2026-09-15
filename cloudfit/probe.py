@@ -8,6 +8,7 @@ module changing shape.
 
 from __future__ import annotations
 
+import getpass
 import os
 import shutil
 from collections.abc import Callable
@@ -44,6 +45,7 @@ class Finding:
 class Capabilities:
     binaries: dict[str, str | None] = field(default_factory=dict)
     accounting: dict[str, object] = field(default_factory=dict)
+    permissions: dict[str, object] = field(default_factory=dict)
     history_sources: list[dict] = field(default_factory=list)
     remedy: str | None = None
     privileged: bool = False
@@ -122,6 +124,8 @@ def capabilities(runner: Runner | None = None,
                 f"{' and '.join(off)}"
             )
 
+    caps.permissions = _accounting_permissions(runner, caps, pairs, storage_on)
+
     caps.history_sources = [
         {"source": "slurmpast", "available": bool(caps.binaries.get("slurmpast")) and storage_on,
          "why": "needs slurmdbd, a database behind it, and JobAcctGatherType"},
@@ -139,6 +143,59 @@ def capabilities(runner: Runner | None = None,
     if not caps.binaries.get("nvidia-smi"):
         caps.notes.append("no nvidia-smi here, so GPU axes only populate on a compute node")
     return caps
+
+
+ELEVATED = {"OPERATOR", "ADMINISTRATOR", "ADMIN"}
+
+
+def _accounting_permissions(runner: Runner, caps: Capabilities, pairs: dict[str, str],
+                            storage_on: bool) -> dict[str, object]:
+    """Whether the caller may *read* accounting, which is separate from whether it exists.
+
+    Configured-and-unreadable is a real state: any user sees their own jobs, but
+    another user's history needs AdminLevel=Operator or coordinator rights on the
+    account, and `PrivateData` can withdraw even that. Only a Slurm admin grants it.
+    """
+    user = getpass.getuser()
+    out: dict[str, object] = {"user": user, "admin_level": None, "coordinator_of": [],
+                              "private_data": pairs.get("PrivateData")}
+    if not caps.binaries.get("sacctmgr") or not storage_on:
+        out["own_history_readable"] = False
+        out["cross_user_history_readable"] = False
+        out["remedy"] = None if not storage_on else "sacctmgr is not on PATH"
+        return out
+
+    shown = runner(["sacctmgr", "-n", "show", "user", user, "format=User,AdminLevel"], timeout=60.0)
+    if shown.ok and shown.stdout.split():
+        parts = shown.stdout.split()
+        out["admin_level"] = parts[1] if len(parts) > 1 else None
+
+    coord = runner(["sacctmgr", "-n", "show", "user", user, "withcoord", "format=User,Coord"],
+                   timeout=60.0)
+    if coord.ok:
+        out["coordinator_of"] = [a for a in coord.stdout.split()[1:] if a]
+
+    level = (out["admin_level"] or "").upper()
+    restricted = "jobs" in (out["private_data"] or "").lower()
+    elevated = level in ELEVATED or bool(out["coordinator_of"])
+    out["own_history_readable"] = True
+    out["cross_user_history_readable"] = elevated or not restricted
+
+    if elevated:
+        out["remedy"] = (
+            f"AdminLevel={out['admin_level'] or 'coordinator'} — this account can read other "
+            "users' accounting. cloudfit still scopes every query to you with -u, so a workload "
+            "name shared with another user cannot leak into your fit"
+        )
+    elif restricted:
+        out["remedy"] = (
+            f"AdminLevel={out['admin_level'] or 'None'} and PrivateData={out['private_data']}: "
+            "you can read your own history and no one else's. That is all a fit needs. Only a "
+            "Slurm admin can raise it (`sacctmgr modify user ... set adminlevel=Operator`)"
+        )
+    else:
+        out["remedy"] = None
+    return out
 
 
 # ----------------------------------------------------------------- the cloud

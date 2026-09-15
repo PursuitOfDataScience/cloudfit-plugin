@@ -131,3 +131,47 @@ def test_doctor_refuses_without_a_project():
     report = doctor(runner)
     assert report.findings[0].status == "missing"
     assert not report.reachable
+
+
+# ------------------------------------------------------- reading it vs having it
+
+OPERATOR = "    youzhi  Operator  rcc-staff \n"
+PLAIN = "    someone  None  pi-smith \n"
+
+
+def perms(config=ON, level=PLAIN, coord="    someone \n"):
+    runner = (
+        FakeRunner()
+        .on("sacctmgr", "withcoord", stdout=coord)
+        .on("sacctmgr", "format=User,AdminLevel", stdout=level)
+        .on("show", "config", stdout=config)
+    )
+    return capabilities(runner, which=have_everything).permissions
+
+
+def test_an_ordinary_user_can_read_their_own_history_and_no_one_elses():
+    p = perms(config=ON.replace("ClusterName", "PrivateData             = jobs,users\nClusterName"))
+    assert p["admin_level"] == "None"
+    assert p["own_history_readable"]
+    assert not p["cross_user_history_readable"]
+    assert "your own history and no one else's" in p["remedy"]
+    assert "Only a Slurm admin can raise it" in p["remedy"]
+
+
+def test_an_operator_is_told_that_queries_are_still_scoped_to_them():
+    p = perms(level=OPERATOR)
+    assert p["admin_level"] == "Operator"
+    assert p["cross_user_history_readable"]
+    assert "scopes every query to you with -u" in p["remedy"]
+
+
+def test_a_coordinator_counts_as_elevated():
+    p = perms(coord="    someone  pi-smith \n")
+    assert p["coordinator_of"] == ["pi-smith"]
+    assert p["cross_user_history_readable"]
+
+
+def test_permission_is_not_probed_when_there_is_nothing_to_read():
+    p = perms(config=STORAGE_OFF)
+    assert not p["own_history_readable"]
+    assert p["remedy"] is None  # the accounting remedy already covers it

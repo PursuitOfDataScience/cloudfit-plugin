@@ -55,5 +55,5 @@ Not built yet: `apply`, `bootstrap`, `launch`, `provision`, `teardown`, `sweep`,
 ruff check . && python -m pytest -q && claude plugin validate . --strict
 ```
 
-162 tests, no cluster or cloud needed. In `fixtures/`, `_real` was captured from a live
+168 tests, no cluster or cloud needed. In `fixtures/`, `_real` was captured from a live
 command and `_synthetic` was built from the real schema — never blurred.

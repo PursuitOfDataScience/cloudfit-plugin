@@ -177,9 +177,15 @@ def _requested_int(advice: dict) -> int | None:
 
 
 def from_slurmpast(workload: str, runner: Runner, *, since: str = DEFAULT_SINCE,
-                   partition: str | None = None) -> HistoryResult | str:
-    """Returns a HistoryResult, or a string saying why this source could not answer."""
-    result = runner(["slurmpast", "--sizing", "--json", "-S", since, "-n", "0"], timeout=300.0)
+                   partition: str | None = None, user: str | None = None) -> HistoryResult | str:
+    """Returns a HistoryResult, or a string saying why this source could not answer.
+
+    `-u` is passed explicitly rather than relying on the default: an account with
+    AdminLevel=Operator can see the whole cluster, and a workload name shared with
+    another user would otherwise size your job from their telemetry.
+    """
+    result = runner(["slurmpast", "--sizing", "--json", "-S", since, "-n", "0",
+                     "-u", user or getpass.getuser()], timeout=300.0)
     if result.missing:
         return "slurmpast is not installed"
     doc = result.json()
@@ -319,7 +325,7 @@ def history(workload: str, *, runner: Runner | None = None, since: str = DEFAULT
     tried: list[str] = []
 
     for attempt in (
-        lambda: from_slurmpast(workload, runner, since=since, partition=partition),
+        lambda: from_slurmpast(workload, runner, since=since, partition=partition, user=user),
         lambda: from_sacct(workload, runner, since=since, user=user),
     ):
         outcome = attempt()

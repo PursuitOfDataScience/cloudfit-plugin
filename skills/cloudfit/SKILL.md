@@ -23,10 +23,13 @@ The `cloudfit` MCP tools enforce all of this. These are the rules, not the enfor
 
 ## Trust the right memory number
 - Prefer the cgroup anonymous working set over `memory.peak` / `sstat` MaxRSS, which count
-  reclaimable page cache — Arrow-backed datasets inflate it by an order of magnitude.
-- Report the disagreement. Never silently size to the larger figure.
+  reclaimable page cache — Arrow-backed datasets inflate it tenfold. Report the disagreement;
+  never silently size to the larger figure.
 - `sacct` gives CPU-seconds, so its core figure is a run average, not a peak. Say so, and
   confirm against `slurmwatch` before cutting cores.
+- Accounting existing and being allowed to read it are separate. Scope every history query to
+  the caller: an `Operator` account sees the whole cluster, and a shared workload name would
+  otherwise fit your job from someone else's telemetry.
 
 ## Never emit something the scheduler rejects
 - Never recommend below an observed peak.
