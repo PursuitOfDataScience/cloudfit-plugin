@@ -1,27 +1,38 @@
 # cloudfit
 
-**You asked for 96 GB. You used 9.** Meanwhile the GPU you paid for sat 40% full.
+**Fits Slurm jobs to what they actually used.** Not just smaller — *both* directions.
 
-A Claude Code plugin that reads what your Slurm job *actually did* and tells you what you
-should have asked for: cores, RAM and walltime come **down**, the GPU knobs go **up** until
-the expensive card is the bottleneck. Two corrections, opposite directions, one pass — the
-`fit`.
+```
+              you asked      it used        cloudfit says
+  cores       16  ████████   5.4  ███       8    ████      ↓ cut
+  RAM         96G ████████   9.3G █         13G  █▌        ↓ cut
+  GPU HBM     80G ████████   32G  ███       72G  ███████   ↑ raise batch / seq / KV
+  walltime    2h  ████████   47m  ███       1h   ████      ↓ cut
+```
 
-Every number arrives with its sample size. One run is a guess and says so; four runs agreeing
-within 10% is a recommendation. It never returns a number below a peak it measured or above a
-limit the scheduler would reject.
+CPU and RAM get over-requested; the GPU gets under-driven. Opposite corrections, one pass.
+
+```
+  slurmwatch (live)  ┐
+  slurmpast / sacct  ├─→  fit  ─→  #SBATCH block + why + confidence(n)
+  cloudfit's record  ┘     │
+                           └─ never below a measured peak, never above
+                              a partition limit, never at n=0
+```
+
+One run is a guess and says so; four agreeing within 10% is a recommendation.
 
 > **Not this:** SkyPilot picks *where* to run. cloudfit answers the question underneath.
 
 ## Install
 
 ```bash
-git clone git@github.com:PursuitOfDataScience/cloudfit-plugin.git
-claude plugin install ./cloudfit-plugin
+claude plugin marketplace add PursuitOfDataScience/cloudfit-plugin
+claude plugin install cloudfit@cloudfit-plugin
 ```
 
-Needs the `mcp` SDK on the interpreter in `.mcp.json`. Then `/fit <job-id>` or
-`/fit job.sbatch`.
+Then `/fit <job-id>` or `/fit job.sbatch`. Needs the `mcp` SDK on the interpreter in
+`.mcp.json`.
 
 ## Tools
 
@@ -30,13 +41,12 @@ Needs the `mcp` SDK on the interpreter in `.mcp.json`. Then `/fit <job-id>` or
 | `capabilities()` | which telemetry sources exist here, and how to fix the gaps |
 | `measure(jobid)` | the four axes now, via `slurmwatch` (hops to the node for GPU) |
 | `history(workload)` | `slurmpast` → `sacct` → own record, saying which answered |
-| `fit(jobid \| script)` | corrected `#SBATCH` block, per-axis reasoning, confidence |
+| `fit(jobid \| script)` | corrected `#SBATCH` block, reasoning, confidence |
 | `check(script)` | pre-submit lint against the live partition |
 | `submit(script)` | generates `--exclude` for GPU nodes, then verifies it took |
 | `doctor()` | read-only GCP readiness, each gap with the command that fixes it |
 
 A `PreToolUse` hook checks your own `sbatch` and `gcloud` commands too.
-
 Not built yet: `apply`, `bootstrap`, `launch`, `provision`, `teardown`, `sweep`, `where`.
 
 ## Checks
@@ -45,5 +55,5 @@ Not built yet: `apply`, `bootstrap`, `launch`, `provision`, `teardown`, `sweep`,
 ruff check . && python -m pytest -q && claude plugin validate . --strict
 ```
 
-158 tests, no cluster or cloud needed. In `fixtures/`, `_real` means captured from a live
-command and `_synthetic` means built by hand from the real schema — never blurred.
+160 tests, no cluster or cloud needed. In `fixtures/`, `_real` was captured from a live
+command and `_synthetic` was built from the real schema — never blurred.

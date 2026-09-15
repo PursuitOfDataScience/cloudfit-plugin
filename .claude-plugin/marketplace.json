@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "cloudfit-plugin",
+  "owner": {
+    "name": "Youzhi Yu",
+    "email": "youzhi@uchicago.edu"
+  },
+  "metadata": {
+    "description": "Fits Slurm jobs to what they actually used \u2014 trims over-asked CPU and RAM, drives an under-used GPU up."
+  },
+  "plugins": [
+    {
+      "name": "cloudfit",
+      "source": "./",
+      "description": "Fits Slurm jobs to what they actually used: trims the CPU and RAM you over-asked for, drives the GPU you under-used, and states the sample size behind every number.",
+      "category": "devops"
+    }
+  ]
+}

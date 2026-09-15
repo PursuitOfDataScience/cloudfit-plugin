@@ -132,8 +132,11 @@ def test_the_plugin_manifest_points_at_files_that_exist():
     for key in ("skills", "commands", "agents"):
         for entry in manifest[key]:
             assert (ROOT / entry).exists(), entry
-    for key in ("hooks", "mcpServers"):
-        assert (ROOT / manifest[key]).exists(), key
+    assert (ROOT / manifest["mcpServers"]).exists()
+    # hooks/hooks.json is auto-loaded; declaring it too makes the plugin fail to
+    # load as a duplicate, which `validate --strict` does not catch.
+    assert "hooks" not in manifest
+    assert (ROOT / "hooks" / "hooks.json").exists()
 
 
 def test_the_hook_manifest_has_the_canonical_shape():
@@ -145,6 +148,14 @@ def test_the_hook_manifest_has_the_canonical_shape():
     assert handler["type"] == "command"
     assert "${CLAUDE_PLUGIN_ROOT}" in handler["command"]
     assert handler["command"].endswith("cloudfit/hook.py")
+
+
+def test_the_marketplace_manifest_offers_this_plugin():
+    market = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text())
+    assert market["name"] == "cloudfit-plugin"
+    assert [p["name"] for p in market["plugins"]] == ["cloudfit"]
+    assert market["plugins"][0]["source"] == "./"
+    assert market["plugins"][0]["description"]
 
 
 def test_the_mcp_entry_point_resolves():
@@ -160,3 +171,10 @@ def test_the_hook_never_exits_two():
     assert "return 2" not in source
     assert "exit(2)" not in source
     assert re.search(r"return 1\b", source)
+
+
+def test_the_readme_install_uses_the_claude_code_path():
+    readme = (ROOT / "README.md").read_text()
+    assert "claude plugin marketplace add PursuitOfDataScience/cloudfit-plugin" in readme
+    assert "claude plugin install cloudfit@cloudfit-plugin" in readme
+    assert "git clone" not in readme
