@@ -1,0 +1,32 @@
+# real: sacct -P -n --format=JobID,JobName,Partition,State,AllocCPUS,ReqMem,MaxRSS,TotalCPU,Elapsed,Timelimit,AllocTRES --name=caai-quickstart (captured 2026-09-15)
+# note: MaxRSS is blank on the job row and only present on .batch/.extern steps -- this is why -X alone is not enough.
+53421112|caai-quickstart|test|COMPLETED|4|48Gn||00:43.741|00:00:43|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53421112.batch|batch||COMPLETED|4|48Gn|3424844K|00:43.740|00:00:43||cpu=4,mem=48G,node=1
+53421112.extern|extern||COMPLETED|4|48Gn|1944K|00:00:00|00:00:43||billing=4,cpu=4,mem=48G,node=1
+53421594|caai-quickstart|test|COMPLETED|4|48Gn||00:38.821|00:00:47|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53421594.batch|batch||COMPLETED|4|48Gn|3690348K|00:38.819|00:00:47||cpu=4,mem=48G,node=1
+53421594.extern|extern||COMPLETED|4|48Gn|1932K|00:00.001|00:00:47||billing=4,cpu=4,mem=48G,node=1
+53421678|caai-quickstart|test|COMPLETED|4|48Gn||00:38.415|00:00:37|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53421678.batch|batch||COMPLETED|4|48Gn|3485268K|00:38.413|00:00:37||cpu=4,mem=48G,node=1
+53421678.extern|extern||COMPLETED|4|48Gn|1932K|00:00.001|00:00:37||billing=4,cpu=4,mem=48G,node=1
+53421863|caai-quickstart|test|COMPLETED|4|48Gn||00:39.860|00:00:46|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53421863.batch|batch||COMPLETED|4|48Gn|3587108K|00:39.860|00:00:46||cpu=4,mem=48G,node=1
+53421863.extern|extern||COMPLETED|4|48Gn|1948K|00:00:00|00:00:46||billing=4,cpu=4,mem=48G,node=1
+53421965|caai-quickstart|test|COMPLETED|4|48Gn||00:41.692|00:00:50|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53421965.batch|batch||COMPLETED|4|48Gn|3517064K|00:41.691|00:00:50||cpu=4,mem=48G,node=1
+53421965.extern|extern||COMPLETED|4|48Gn|1944K|00:00:00|00:00:50||billing=4,cpu=4,mem=48G,node=1
+53422433|caai-quickstart|test|COMPLETED|4|48Gn||00:40.004|00:00:45|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53422433.batch|batch||COMPLETED|4|48Gn|3604212K|00:40.004|00:00:45||cpu=4,mem=48G,node=1
+53422433.extern|extern||COMPLETED|4|48Gn|1944K|00:00:00|00:00:45||billing=4,cpu=4,mem=48G,node=1
+53422754|caai-quickstart|test|COMPLETED|4|48Gn||00:40.377|00:00:59|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53422754.batch|batch||COMPLETED|4|48Gn|3330540K|00:40.376|00:00:59||cpu=4,mem=48G,node=1
+53422754.extern|extern||COMPLETED|4|48Gn|1948K|00:00:00|00:00:59||billing=4,cpu=4,mem=48G,node=1
+53422930|caai-quickstart|test|COMPLETED|4|48Gn||00:42.955|00:01:14|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53422930.batch|batch||COMPLETED|4|48Gn|3477540K|00:42.954|00:01:14||cpu=4,mem=48G,node=1
+53422930.extern|extern||COMPLETED|4|48Gn|1944K|00:00:00|00:01:14||billing=4,cpu=4,mem=48G,node=1
+53423202|caai-quickstart|test|COMPLETED|4|48Gn||00:43.642|00:00:53|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53423202.batch|batch||COMPLETED|4|48Gn|3452588K|00:43.641|00:00:53||cpu=4,mem=48G,node=1
+53423202.extern|extern||COMPLETED|4|48Gn|2812K|00:00.001|00:00:53||billing=4,cpu=4,mem=48G,node=1
+53424219|caai-quickstart|test|COMPLETED|4|48Gn||00:38.239|00:00:56|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53424219.batch|batch||COMPLETED|4|48Gn|3401944K|00:38.238|00:00:56||cpu=4,mem=48G,node=1
+53424219.extern|extern||COMPLETED|4|48Gn|1948K|00:00:00|00:00:56||billing=4,cpu=4,mem=48G,node=1

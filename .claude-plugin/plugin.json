@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "cloudfit",
+  "version": "0.1.0",
+  "description": "Fits a Slurm job to what it actually used: CPU and RAM come down, the GPU gets driven up, and every recommendation states its sample size.",
+  "author": {
+    "name": "Youzhi Yu",
+    "email": "youzhi@uchicago.edu"
+  },
+  "skills": [
+    "./skills/cloudfit"
+  ],
+  "commands": [
+    "./commands/fit.md"
+  ],
+  "agents": [
+    "./agents/cloudfit.md"
+  ],
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json"
+}

@@ -1,0 +1,12 @@
+# real: sinfo -p gpu -h -N -o '%N %G'  (captured 2026-09-15)
+midway3-0277 gpu:4
+midway3-0278 gpu:4
+midway3-0279 gpu:4
+midway3-0280 gpu:4
+midway3-0281 gpu:4
+midway3-0282 gpu:4
+midway3-0283 gpu:4
+midway3-0284 gpu:4
+midway3-0285 gpu:4
+midway3-0286 gpu:4
+midway3-0294 gpu:4

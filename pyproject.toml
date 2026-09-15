@@ -1,0 +1,23 @@
+# Tooling config only. There is deliberately no [build-system]: cloudfit is a
+# Claude Code plugin, not a package, and nothing here is meant to be installable.
+[project]
+name = "cloudfit"
+version = "0.1.0"
+description = "Fit a Slurm job to what it actually used."
+requires-python = ">=3.10"
+dependencies = ["mcp>=1.28"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RET", "PTH", "S"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

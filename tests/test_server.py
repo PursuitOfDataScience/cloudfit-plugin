@@ -1,0 +1,171 @@
+"""The MCP surface, and the submit path — against a fake, never a real queue."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+
+import pytest
+from conftest import load_text
+
+from cloudfit.collect import FakeRunner, partition_facts
+from cloudfit.guard import parse_script
+from cloudfit.server import mcp, submit_with
+
+CPU_SCRIPT = """#!/bin/bash
+#SBATCH --job-name=caai-quickstart
+#SBATCH --partition=amd
+#SBATCH --account=rcc-staff
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=5G
+#SBATCH --time=00:02:00
+python run.py
+"""
+
+
+def submit_runner(node: str, gres: str) -> FakeRunner:
+    return (
+        FakeRunner()
+        .on("sbatch", stdout="59400001;midway3\n")
+        .on("squeue", stdout=f"RUNNING|(None)|{node}\n")
+        .on("scontrol", "show", "hostnames", stdout=f"{node}\n")
+        .on("scontrol", "show", "node", stdout=f"NodeName={node} Gres={gres}\n")
+    )
+
+
+def facts_for(partition: str) -> object:
+    runner = (
+        FakeRunner()
+        .on("scontrol", "show", "partition", partition,
+            stdout=load_text(f"scontrol_partition_{partition}_real.txt"))
+        .on("sinfo", "-p", partition, "%n %c %m",
+            stdout=load_text(f"sinfo_{partition}_sizes_real.txt"))
+        .on("sinfo", "-p", partition, "%N %G",
+            stdout=load_text(f"sinfo_{partition}_nodes_real.txt"))
+    )
+    return partition_facts(partition, runner)
+
+
+def test_every_phase_three_tool_is_exposed():
+    names = [t.name for t in asyncio.run(mcp.list_tools())]
+    assert names == ["capabilities", "measure", "history", "fit", "check", "submit", "doctor"]
+
+
+def test_the_tool_schemas_describe_their_arguments():
+    tools = {t.name: t for t in asyncio.run(mcp.list_tools())}
+    assert tools["measure"].inputSchema["required"] == ["job_id"]
+    assert set(tools["fit"].inputSchema["properties"]) == {"job_id", "script_path", "script", "since"}
+    assert tools["fit"].inputSchema.get("required", []) == []
+    assert all(t.description for t in tools.values())
+
+
+def test_submit_refuses_before_reaching_sbatch():
+    runner = submit_runner("midway3-0501", "(null)")
+    without = CPU_SCRIPT.replace("#SBATCH --account=rcc-staff\n", "")
+    result = submit_with(without, "job.sbatch", parse_script(without), facts_for("amd"),
+                         runner=runner)
+    assert not result["submitted"]
+    assert any("no --account" in r for r in result["refusals"])
+    assert runner.calls == []  # nothing was submitted
+
+
+def test_submit_on_a_cpu_only_partition_needs_no_exclusion():
+    runner = submit_runner("midway3-0501", "(null)")
+    result = submit_with(CPU_SCRIPT, "job.sbatch", parse_script(CPU_SCRIPT), facts_for("amd"),
+                         runner=runner)
+    assert result["submitted"]
+    assert result["job_id"] == "59400001"
+    assert result["excluded"] == []
+    assert result["argv"] == ["sbatch", "--parsable", "job.sbatch"]
+    assert result["exclusion_verified"] == "verified"
+    assert result["refusals"] == []
+
+
+def test_submit_generates_the_exclusion_from_the_live_partition():
+    script = CPU_SCRIPT.replace("--partition=amd", "--partition=gpu")
+    runner = submit_runner("midway3-0290", "(null)")
+    result = submit_with(script, "job.sbatch", parse_script(script), facts_for("gpu"),
+                         runner=runner)
+    assert result["submitted"]
+    assert len(result["excluded"]) == 11
+    assert result["argv"][2].startswith("--exclude=midway3-0277,")
+    assert runner.argv_containing("sbatch")[0][2].startswith("--exclude=")
+
+
+def test_a_no_gres_job_that_lands_on_a_gpu_node_is_reported_not_ignored():
+    script = CPU_SCRIPT.replace("--partition=amd", "--partition=gpu")
+    runner = submit_runner("midway3-0277", "gpu:v100:4")
+    result = submit_with(script, "job.sbatch", parse_script(script), facts_for("gpu"),
+                         runner=runner)
+    assert result["submitted"]
+    assert any("landed on midway3-0277" in r for r in result["refusals"])
+    assert any("scancel 59400001" in w for w in result["warnings"])
+
+
+def test_a_gpu_job_is_submitted_without_an_exclusion():
+    script = CPU_SCRIPT.replace("--partition=amd", "--partition=gpu").replace(
+        "#SBATCH --mem=5G", "#SBATCH --gres=gpu:1")
+    runner = submit_runner("midway3-0277", "gpu:v100:4")
+    result = submit_with(script, "job.sbatch", parse_script(script), facts_for("gpu"),
+                         runner=runner)
+    assert result["submitted"]
+    assert result["excluded"] == []
+    assert result["refusals"] == []
+
+
+def test_dry_run_shows_the_argv_without_submitting():
+    runner = submit_runner("midway3-0501", "(null)")
+    result = submit_with(CPU_SCRIPT, "job.sbatch", parse_script(CPU_SCRIPT), facts_for("amd"),
+                         dry_run=True, runner=runner)
+    assert not result["submitted"]
+    assert result["argv"] == ["sbatch", "--parsable", "job.sbatch"]
+    assert any("nothing was submitted" in w for w in result["warnings"])
+    assert runner.calls == []
+
+
+def test_an_sbatch_failure_is_surfaced_verbatim():
+    runner = FakeRunner().on("sbatch", returncode=1, stderr="sbatch: error: QOSMaxSubmitJobPerUser")
+    result = submit_with(CPU_SCRIPT, "job.sbatch", parse_script(CPU_SCRIPT), facts_for("amd"),
+                         runner=runner)
+    assert not result["submitted"]
+    assert "QOSMaxSubmitJobPerUser" in result["refusals"][0]
+
+
+def test_the_check_report_travels_with_the_submission():
+    runner = submit_runner("midway3-0501", "(null)")
+    result = submit_with(CPU_SCRIPT, "job.sbatch", parse_script(CPU_SCRIPT), facts_for("amd"),
+                         runner=runner)
+    assert result["check"]["ok"]
+    assert result["check"]["request"]["cpus"] == 4
+
+
+@pytest.mark.parametrize("tool", ["check", "fit"])
+def test_tools_require_a_script_or_a_job(tool):
+    from cloudfit import server
+
+    with pytest.raises(ValueError, match="pass either|pass a job_id"):
+        getattr(server, tool)()
+
+
+def test_history_tool_falls_back_to_the_filename_as_the_workload(tmp_path, monkeypatch):
+    from cloudfit import server
+
+    path = tmp_path / "tokenize-shards.sbatch"
+    path.write_text("#SBATCH --mem=8G\n")  # no --job-name
+    monkeypatch.setattr("cloudfit.collect.default_runner",
+                        lambda: FakeRunner().absent("slurmpast").absent("sacct"))
+    monkeypatch.setenv("CLOUDFIT_HOME", str(tmp_path / "record"))
+    assert server.history(script_path=str(path))["workload"] == "tokenize-shards"
+    with pytest.raises(ValueError, match="pass either"):
+        server.history()
+
+
+def test_measure_records_what_it_measured(record_home, monkeypatch, cpu_overask_real):
+    from cloudfit import server
+
+    runner = FakeRunner().on("slurmwatch", stdout=json.dumps(cpu_overask_real))
+    monkeypatch.setattr("cloudfit.collect.default_runner", lambda: runner)
+    payload = server.measure("58107383")
+    assert payload["observation"]["job_id"] == "58107383"
+    assert payload["recorded_to"].endswith("history.jsonl")
+    assert (record_home / "history.jsonl").exists()

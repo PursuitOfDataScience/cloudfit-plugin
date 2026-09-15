@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "cloudfit": {
+      "command": "/software/python-miniforge-25.3.0-el8-x86_64/envs/AI/bin/python",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/cloudfit/server.py"
+      ]
+    }
+  }
+}

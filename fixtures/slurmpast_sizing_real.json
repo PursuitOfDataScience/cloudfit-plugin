@@ -1,0 +1,210 @@
+{
+  "slurmpast": "0.9.0",
+  "window": "last 30 days",
+  "workloads": [
+    {
+      "name": "software",
+      "partition": "test",
+      "runs": 100,
+      "advice": [
+        {
+          "flag": "--time",
+          "verdict": "raise",
+          "requested": "01:00:00",
+          "observed": "00:58:55 longest, 00:58:33 at p95",
+          "suggestion": "01:15:00",
+          "basis": "longest of 99 completed runs took 00:58:55.",
+          "caution": ""
+        },
+        {
+          "flag": "--mem",
+          "verdict": "raise",
+          "requested": "32.0 GiB",
+          "observed": "60.6 GiB peak across 13 runs",
+          "suggestion": "79G",
+          "basis": "the most any run used was 60.6 GiB.",
+          "caution": "MaxRSS double-counts shared pages here, so it is an upper bound.  86 runs excluded: MaxRSS above the limit."
+        },
+        {
+          "flag": "--cpus-per-task",
+          "verdict": "keep",
+          "requested": "4",
+          "observed": "3.0 cores busy per task at peak across 99 runs",
+          "suggestion": "",
+          "basis": "the busiest run used 3.0 of 4 cores per task.",
+          "caution": ""
+        }
+      ]
+    },
+    {
+      "name": "exp-a#",
+      "partition": "gpu",
+      "runs": 9,
+      "advice": [
+        {
+          "flag": "--time",
+          "verdict": "unknown",
+          "requested": "10-00:00:00",
+          "observed": "0 completed runs",
+          "suggestion": "",
+          "basis": "Needs at least 3 completed runs before a limit can be inferred.",
+          "caution": ""
+        },
+        {
+          "flag": "--mem",
+          "verdict": "lower",
+          "requested": "24.0 GiB",
+          "observed": "10.4 GiB peak across 3 runs",
+          "suggestion": "14G",
+          "basis": "the most any run used was 10.4 GiB.",
+          "caution": "MaxRSS double-counts shared pages here, so it is an upper bound."
+        },
+        {
+          "flag": "--cpus-per-task",
+          "verdict": "keep",
+          "requested": "2",
+          "observed": "0.9 cores busy per task at peak across 3 runs",
+          "suggestion": "",
+          "basis": "the busiest run used 0.9 of 2 cores per task.",
+          "caution": ""
+        }
+      ]
+    },
+    {
+      "name": "software",
+      "partition": "beagle3",
+      "runs": 14,
+      "advice": [
+        {
+          "flag": "--time",
+          "verdict": "raise",
+          "requested": "12:00:00",
+          "observed": "11:58:45 longest, 11:58:45 at p95",
+          "suggestion": "15:00:00",
+          "basis": "longest of 4 completed runs took 11:58:45.",
+          "caution": ""
+        },
+        {
+          "flag": "--mem",
+          "verdict": "keep",
+          "requested": "65.0 GiB",
+          "observed": "46.1 GiB peak across 9 runs",
+          "suggestion": "",
+          "basis": "the most any run used was 46.1 GiB.",
+          "caution": "Thinly sampled (at most 2 samples in 57s), so the peak may be low.  1 run excluded: MaxRSS above the limit.  Per node; the allocation total is larger."
+        },
+        {
+          "flag": "--cpus-per-task",
+          "verdict": "raise",
+          "requested": "4",
+          "observed": "4.0 cores busy per task at peak across 10 runs",
+          "suggestion": "5",
+          "basis": "the busiest run used 4.0 of 4 cores per task.",
+          "caution": "Per task: this workload runs 2, so the allocation total is that many times larger."
+        }
+      ]
+    },
+    {
+      "name": "build_reserve",
+      "partition": "build",
+      "runs": 4,
+      "advice": [
+        {
+          "flag": "--time",
+          "verdict": "unknown",
+          "requested": "06:00:00",
+          "observed": "0 completed runs",
+          "suggestion": "",
+          "basis": "Needs at least 3 completed runs before a limit can be inferred.",
+          "caution": ""
+        },
+        {
+          "flag": "--mem",
+          "verdict": "raise",
+          "requested": "50.0 GiB",
+          "observed": "1 OOM kill, the largest at 50.0 GiB",
+          "suggestion": "65G",
+          "basis": "A request that OOM'd is a floor: the requirement is above it.",
+          "caution": "If it also succeeded at this size, memory is not the cause."
+        },
+        {
+          "flag": "--cpus-per-task",
+          "verdict": "unknown",
+          "requested": "6",
+          "observed": "2 runs with CPU accounting",
+          "suggestion": "",
+          "basis": "Needs at least 3 before core use can be inferred.",
+          "caution": ""
+        }
+      ]
+    },
+    {
+      "name": "amd_reserve",
+      "partition": "test",
+      "runs": 4,
+      "advice": [
+        {
+          "flag": "--time",
+          "verdict": "unknown",
+          "requested": "10-00:00:00",
+          "observed": "0 completed runs",
+          "suggestion": "",
+          "basis": "Needs at least 3 completed runs before a limit can be inferred.",
+          "caution": ""
+        },
+        {
+          "flag": "--mem",
+          "verdict": "unknown",
+          "requested": "50.0 GiB",
+          "observed": "2 runs with a usable memory reading",
+          "suggestion": "",
+          "basis": "Needs at least 3 before a footprint can be inferred.",
+          "caution": ""
+        },
+        {
+          "flag": "--cpus-per-task",
+          "verdict": "unknown",
+          "requested": "6",
+          "observed": "2 runs with CPU accounting",
+          "suggestion": "",
+          "basis": "Needs at least 3 before core use can be inferred.",
+          "caution": ""
+        }
+      ]
+    },
+    {
+      "name": "amd_reserve",
+      "partition": "amd",
+      "runs": 1,
+      "advice": [
+        {
+          "flag": "--time",
+          "verdict": "unknown",
+          "requested": "08:00:00",
+          "observed": "0 completed runs",
+          "suggestion": "",
+          "basis": "Needs at least 3 completed runs before a limit can be inferred.",
+          "caution": ""
+        },
+        {
+          "flag": "--mem",
+          "verdict": "unknown",
+          "requested": "50.0 GiB",
+          "observed": "0 runs with a usable memory reading",
+          "suggestion": "",
+          "basis": "Needs at least 3 before a footprint can be inferred.",
+          "caution": ""
+        },
+        {
+          "flag": "--cpus-per-task",
+          "verdict": "unknown",
+          "requested": "6",
+          "observed": "0 runs with CPU accounting",
+          "suggestion": "",
+          "basis": "Needs at least 3 before core use can be inferred.",
+          "caution": ""
+        }
+      ]
+    }
+  ]
+}

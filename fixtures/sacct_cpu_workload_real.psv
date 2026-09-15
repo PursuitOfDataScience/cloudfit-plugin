@@ -1,0 +1,12 @@
+53420992|caai-p56a|test|FAILED|6|150Gn||00:00:00|00:00:56|03:00:00|billing=6,cpu=6,mem=150G,node=1
+53421034|caai-p56b|test|COMPLETED|6|150Gn||00:00:00|00:10:21|03:00:00|billing=6,cpu=6,mem=150G,node=1
+53421042|caai-p56a|test|FAILED|6|150Gn||00:00:00|00:01:55|03:00:00|billing=6,cpu=6,mem=150G,node=1
+53421080|caai-p56a|test|COMPLETED|6|150Gn||00:00:00|00:04:21|03:00:00|billing=6,cpu=6,mem=150G,node=1
+53421112|caai-quickstart|test|COMPLETED|4|48Gn||00:00:00|00:00:43|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53421243|caai-p57a|test|FAILED|6|150Gn||00:00:00|00:00:47|03:00:00|billing=6,cpu=6,mem=150G,node=1
+53421262|caai-p57a|test|COMPLETED|6|150Gn||00:00:00|00:05:19|03:00:00|billing=6,cpu=6,mem=150G,node=1
+53421337|caai-p57b|test|COMPLETED|6|150Gn||00:00:00|00:00:53|03:00:00|billing=6,cpu=6,mem=150G,node=1
+53421594|caai-quickstart|test|COMPLETED|4|48Gn||00:00:00|00:00:47|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53421678|caai-quickstart|test|COMPLETED|4|48Gn||00:00:00|00:00:37|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53421863|caai-quickstart|test|COMPLETED|4|48Gn||00:00:00|00:00:46|01:00:00|billing=4,cpu=4,mem=48G,node=1
+53421965|caai-quickstart|test|COMPLETED|4|48Gn||00:00:00|00:00:50|01:00:00|billing=4,cpu=4,mem=48G,node=1

@@ -1,0 +1,12 @@
+PartitionName=amd
+   AllowGroups=ALL AllowAccounts=ALL AllowQos=amd,debug,mgreenst-prio
+   AllocNodes=ALL Default=NO QoS=N/A
+   DefaultTime=NONE DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO
+   MaxNodes=UNLIMITED MaxTime=UNLIMITED MinNodes=0 LLN=NO MaxCPUsPerNode=UNLIMITED
+   Nodes=midway3-0[501-539,549]
+   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO
+   OverTimeLimit=NONE PreemptMode=OFF
+   State=UP TotalCPUs=5120 TotalNodes=40 SelectTypeParameters=NONE
+   JobDefaults=(null)
+   DefMemPerCPU=1750 MaxMemPerNode=UNLIMITED
+

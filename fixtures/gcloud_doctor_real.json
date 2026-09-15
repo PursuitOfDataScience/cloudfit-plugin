@@ -1,0 +1,1913 @@
+{
+  "_fixture": "real",
+  "_captured": "2026-09-15",
+  "_project": "sage-rcc-8dbf5f",
+  "_note": "Trimmed to the entries doctor reads. GPUS-ALL-REGIONS-per-project has an empty dimensionsInfos[].details in `quotas info list` even though the limit is a hard 0 -- so the limit is read from `project-info describe`, and `quotas info list` is used only for quotaIncreaseEligibility.",
+  "services_list": [
+    {
+      "config": {
+        "authentication": {},
+        "documentation": {
+          "summary": "An API to manage the running of Batch resources on Google Cloud Platform."
+        },
+        "monitoring": {},
+        "name": "batch.googleapis.com",
+        "quota": {},
+        "title": "Batch API",
+        "usage": {
+          "requirements": [
+            "serviceusage.googleapis.com/tos/cloud"
+          ]
+        }
+      },
+      "name": "projects/48371073389/services/batch.googleapis.com",
+      "parent": "projects/48371073389",
+      "state": "ENABLED"
+    },
+    {
+      "config": {
+        "authentication": {},
+        "documentation": {
+          "summary": "The Cloud Billing Budget API stores Cloud Billing budgets, which define a budget plan and the rules to execute as spend is tracked against that plan."
+        },
+        "monitoredResources": [
+          {
+            "description": "A location in the external budget API.",
+            "displayName": "A location in the external budget API.",
+            "labels": [
+              {
+                "description": "The identity of the GCP resource container associated with this resource.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location of resource.",
+                "key": "location"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "billingbudgets.googleapis.com/Location"
+          }
+        ],
+        "monitoring": {
+          "consumerDestinations": [
+            {
+              "metrics": [
+                "billingbudgets.googleapis.com/budget_count",
+                "billingbudgets.googleapis.com/quota/budget_count/exceeded"
+              ],
+              "monitoredResource": "billingbudgets.googleapis.com/Location"
+            },
+            {
+              "metrics": [
+                "billingbudgets.googleapis.com/quota/budget_count/limit",
+                "billingbudgets.googleapis.com/quota/budget_count/usage"
+              ],
+              "monitoredResource": "billingbudgets.googleapis.com/Location"
+            }
+          ]
+        },
+        "name": "billingbudgets.googleapis.com",
+        "quota": {},
+        "title": "Cloud Billing Budget API",
+        "usage": {
+          "requirements": [
+            "serviceusage.googleapis.com/tos/cloud"
+          ]
+        }
+      },
+      "name": "projects/48371073389/services/billingbudgets.googleapis.com",
+      "parent": "projects/48371073389",
+      "state": "ENABLED"
+    },
+    {
+      "config": {
+        "authentication": {},
+        "documentation": {
+          "summary": "Creates and runs virtual machines on Google Cloud Platform.\n"
+        },
+        "monitoredResources": [
+          {
+            "description": "VPC Network.",
+            "displayName": "VPC Network",
+            "labels": [
+              {
+                "description": "The identifier of the GCP container (i.e. project) associated with the VPC Network.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location of the VPC Network, global always.",
+                "key": "location"
+              },
+              {
+                "description": "VPC Network resource ID.",
+                "key": "network_id"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "compute.googleapis.com/VpcNetwork"
+          },
+          {
+            "description": "A location in the Compute API.",
+            "displayName": "Compute Location",
+            "labels": [
+              {
+                "description": "The identifier of the GCP container (i.e. project) associated with the Compute Location.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location of resource.",
+                "key": "location"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "compute.googleapis.com/Location"
+          },
+          {
+            "description": "Interconnect.",
+            "displayName": "Interconnect",
+            "labels": [
+              {
+                "description": "The identifier of the GCP container (i.e. project) associated with the Interconnect.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location of the Interconnect.",
+                "key": "location"
+              },
+              {
+                "description": "Interconnect resource ID.",
+                "key": "interconnect_id"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "compute.googleapis.com/Interconnect"
+          },
+          {
+            "description": "Firewall policy.",
+            "displayName": "Firewall policy",
+            "labels": [
+              {
+                "description": "The identifier of the GCP container (i.e. project or organization) associated with the firewall policy.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location of the firewall policy.",
+                "key": "location"
+              },
+              {
+                "description": "Firewall policy resource ID.",
+                "key": "firewall_policy_id"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "compute.googleapis.com/FirewallPolicy"
+          },
+          {
+            "description": "Network policy.",
+            "displayName": "Network policy",
+            "labels": [
+              {
+                "description": "The identifier of the GCP container (i.e. project) associated with the network policy.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location of the network policy.",
+                "key": "location"
+              },
+              {
+                "description": "Network policy resource ID.",
+                "key": "network_policy_id"
+              }
+            ],
+            "launchStage": "ALPHA",
+            "type": "compute.googleapis.com/NetworkPolicy"
+          },
+          {
+            "description": "Security policy.",
+            "displayName": "Security policy",
+            "labels": [
+              {
+                "description": "The identifier of the GCP container (i.e. project) associated with the security policy.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location of the security policy.",
+                "key": "location"
+              },
+              {
+                "description": "Security policy resource ID.",
+                "key": "security_policy_id"
+              }
+            ],
+            "launchStage": "ALPHA",
+            "type": "compute.googleapis.com/SecurityPolicy"
+          },
+          {
+            "description": "Network Path Quotas Resource.",
+            "displayName": "Network Path Quotas Resource",
+            "labels": [
+              {
+                "description": "The GCP container associated with the metric.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location for the quota.",
+                "key": "location"
+              },
+              {
+                "description": "The network path custom dimension.",
+                "key": "network_path_id"
+              }
+            ],
+            "launchStage": "BETA",
+            "type": "compute.googleapis.com/NetworkPathQuotasResource"
+          },
+          {
+            "description": "Resource Policy.",
+            "displayName": "Resource Policy",
+            "labels": [
+              {
+                "description": "The identifier of the GCP container (i.e. project) associated with the Resource Policy.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location of the Resource Policy.",
+                "key": "location"
+              },
+              {
+                "description": "Resource Policy resource ID.",
+                "key": "resource_policy_id"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "compute.googleapis.com/ResourcePolicy"
+          },
+          {
+            "description": "Operation Type.",
+            "displayName": "Operation Type",
+            "labels": [
+              {
+                "description": "The identifier of the GCP container (i.e. project) associated with the operation.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location of the operation.",
+                "key": "location"
+              },
+              {
+                "description": "Operation type.",
+                "key": "operation_type"
+              }
+            ],
+            "launchStage": "ALPHA",
+            "type": "compute.googleapis.com/OperationType"
+          },
+          {
+            "description": "Monitored resource representing a reservation.",
+            "displayName": "Reservation",
+            "labels": [
+              {
+                "description": "The GCP container (e.g. project number) associated with the reservation.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The zone that contains the reservation.",
+                "key": "location"
+              },
+              {
+                "description": "Reservation resource ID.",
+                "key": "reservation_id"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "compute.googleapis.com/Reservation"
+          },
+          {
+            "description": "Monitored resource representing a future reservation.",
+            "displayName": "FutureReservation",
+            "labels": [
+              {
+                "description": "The GCP container (e.g. project number) associated with the future reservation.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The zone that contains the future reservation.",
+                "key": "location"
+              },
+              {
+                "description": "Future Reservation resource id.",
+                "key": "future_reservation_id"
+              }
+            ],
+            "launchStage": "PRELAUNCH",
+            "type": "compute.googleapis.com/FutureReservation"
+          },
+          {
+            "description": "Monitored resource representing a storage pool.",
+            "displayName": "Storage Pool",
+            "labels": [
+              {
+                "description": "The GCP container (e.g. project number) associated with the storage pool.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The location that contains the storage pool.",
+                "key": "location"
+              },
+              {
+                "description": "Numerical resource ID of the storage pool.",
+                "key": "storage_pool_id"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "compute.googleapis.com/StoragePool"
+          },
+          {
+            "description": "Collection of metrics for CX NICs.",
+            "displayName": "MrdmaNic",
+            "labels": [
+              {
+                "description": "The GCP project associated with the instance running the daemon.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The zone that the daemon is running in.",
+                "key": "location"
+              },
+              {
+                "description": "The numerical ID of the GCE instance.",
+                "key": "instance_id"
+              }
+            ],
+            "launchStage": "BETA",
+            "type": "compute.googleapis.com/MrdmaNic"
+          },
+          {
+            "description": "A virtual machine instance hosted in Compute Engine.",
+            "displayName": "VM Instance",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project associated with this resource, such as \"my-project\".",
+                "key": "project_id"
+              },
+              {
+                "description": "The numeric VM instance identifier assigned by Compute Engine.",
+                "key": "instance_id"
+              },
+              {
+                "description": "The Compute Engine zone in which the VM is running.",
+                "key": "zone"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "gce_instance"
+          },
+          {
+            "description": "Backend Service.",
+            "displayName": "Backend Service",
+            "labels": [
+              {
+                "description": "The identifier of the GCP container (i.e. project) associated with the resource.",
+                "key": "resource_container"
+              },
+              {
+                "description": "Location of the Backend Service.",
+                "key": "location"
+              },
+              {
+                "description": "Backend Service resource ID.",
+                "key": "backend_service_id"
+              }
+            ],
+            "launchStage": "ALPHA",
+            "type": "compute.googleapis.com/BackendService"
+          }
+        ],
+        "monitoring": {
+          "consumerDestinations": [
+            {
+              "metrics": [
+                "compute.googleapis.com/broadcast_subnetworks_per_region_per_vpc_network",
+                "compute.googleapis.com/cloud_router_prefixes_from_other_regions_per_region_per_vpc_network",
+                "compute.googleapis.com/cloud_router_prefixes_from_own_region_per_region_per_vpc_network",
+                "compute.googleapis.com/cross_regional_internal_proxy_lb_config_per_region_per_vpc_network",
+                "compute.googleapis.com/dynamic_routes_per_region_per_peering_group",
+                "compute.googleapis.com/firewall_rule_attributes_per_region_per_vpc_network",
+                "compute.googleapis.com/firewall_rule_fqdns_per_region_per_vpc_network",
+                "compute.googleapis.com/gce_firewall_programmed_secure_tag_values_per_vpc_network",
+                "compute.googleapis.com/global_internal_managed_forwarding_rules_per_region_per_vpc_network",
+                "compute.googleapis.com/instances_per_peering_group",
+                "compute.googleapis.com/instances_per_vpc_network",
+                "compute.googleapis.com/internal_lb_forwarding_rules_per_peering_group",
+                "compute.googleapis.com/internal_lb_forwarding_rules_per_vpc_network",
+                "compute.googleapis.com/internal_managed_forwarding_rules_per_peering_group",
+                "compute.googleapis.com/internal_managed_forwarding_rules_per_vpc_network",
+                "compute.googleapis.com/internal_protocol_forwarding_ha_rules_per_vpc_network",
+                "compute.googleapis.com/internal_protocol_forwarding_rules_per_peering_group",
+                "compute.googleapis.com/internal_protocol_forwarding_rules_per_vpc_network",
+                "compute.googleapis.com/ip_aliases_per_peering_group",
+                "compute.googleapis.com/ip_aliases_per_vpc_network",
+                "compute.googleapis.com/multicast_consumers_per_zone_per_vpc_network",
+                "compute.googleapis.com/peerings_per_vpc_network",
+                "compute.googleapis.com/psc_google_apis_forwarding_rules_per_vpc_network",
+                "compute.googleapis.com/psc_ilb_consumer_forwarding_rules_per_producer_vpc_network",
+                "compute.googleapis.com/psc_propagated_connections_per_vpc_network",
+                "compute.googleapis.com/quota/alias_network_endpoints_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/broadcast_subnetworks_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/cloud_router_prefixes_from_other_regions_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/cloud_router_prefixes_from_own_region_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/cross_regional_internal_proxy_lb_config_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/dynamic_routes_per_region_per_peering_group/exceeded",
+                "compute.googleapis.com/quota/firewall_rule_attributes_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/firewall_rule_attributes_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/firewall_rule_fqdns_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/firewall_rule_fqdns_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/gce_firewall_programmed_secure_tag_values_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/global_internal_managed_forwarding_rules_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/global_network_firewall_policy_associations_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/global_network_firewall_policy_associations_per_vpc_network_system/exceeded",
+                "compute.googleapis.com/quota/instances_per_peering_group/exceeded",
+                "compute.googleapis.com/quota/instances_per_regional_vpc_network/exceeded",
+                "compute.googleapis.com/quota/instances_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_peering_group/exceeded",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_regional_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_with_global_access_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_managed_forwarding_rules_per_peering_group/exceeded",
+                "compute.googleapis.com/quota/internal_managed_forwarding_rules_per_regional_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_managed_forwarding_rules_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_ha_rules_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_peering_group/exceeded",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_regional_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_with_global_access_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/ip_aliases_per_peering_group/exceeded",
+                "compute.googleapis.com/quota/ip_aliases_per_regional_vpc_network/exceeded",
+                "compute.googleapis.com/quota/ip_aliases_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/multicast_consumers_per_zone_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/peerings_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/psc_google_apis_forwarding_rules_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/psc_ilb_consumer_forwarding_rules_per_producer_regional_vpc_network/exceeded",
+                "compute.googleapis.com/quota/psc_ilb_consumer_forwarding_rules_per_producer_vpc_network/exceeded",
+                "compute.googleapis.com/quota/psc_incoming_connections_per_producer_vpc_network/exceeded",
+                "compute.googleapis.com/quota/psc_outgoing_connections_per_consumer_vpc_network/exceeded",
+                "compute.googleapis.com/quota/psc_propagated_connections_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/regional_backend_services_protocol_forwarding_fast_ha/exceeded",
+                "compute.googleapis.com/quota/regional_external_managed_forwarding_rules_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/regional_external_proxy_lb_config_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/regional_fast_ip_move_backend_services_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/regional_fast_ip_move_domains_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/regional_internal_managed_forwarding_rules_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/regional_internal_proxy_lb_config_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/regional_network_firewall_policy_associations_per_region_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/regional_network_firewall_policy_associations_per_region_per_vpc_network_system/exceeded",
+                "compute.googleapis.com/quota/static_routes_per_peering_group/exceeded",
+                "compute.googleapis.com/quota/static_routes_per_vpc_network/exceeded",
+                "compute.googleapis.com/quota/subnet_ranges_per_peering_group/exceeded",
+                "compute.googleapis.com/quota/subnet_ranges_per_regional_vpc_network/exceeded",
+                "compute.googleapis.com/quota/subnet_ranges_per_vpc_network/exceeded",
+                "compute.googleapis.com/regional_backend_services_protocol_forwarding_fast_ha",
+                "compute.googleapis.com/regional_external_managed_forwarding_rules_per_region_per_vpc_network",
+                "compute.googleapis.com/regional_external_proxy_lb_config_per_region_per_vpc_network",
+                "compute.googleapis.com/regional_internal_managed_forwarding_rules_per_region_per_vpc_network",
+                "compute.googleapis.com/regional_internal_proxy_lb_config_per_region_per_vpc_network",
+                "compute.googleapis.com/regional_network_firewall_policy_associations_per_region_per_vpc_network",
+                "compute.googleapis.com/static_routes_per_peering_group",
+                "compute.googleapis.com/static_routes_per_vpc_network",
+                "compute.googleapis.com/subnet_ranges_per_peering_group",
+                "compute.googleapis.com/subnet_ranges_per_vpc_network"
+              ],
+              "monitoredResource": "compute.googleapis.com/VpcNetwork"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/asynchronously_replicating_disk_pairs_per_project_region_pair",
+                "compute.googleapis.com/cpus_per_vm_family",
+                "compute.googleapis.com/global_dns/request_count",
+                "compute.googleapis.com/gpus_per_gpu_family",
+                "compute.googleapis.com/inter_region_egress_bandwidth",
+                "compute.googleapis.com/local_ssd_total_storage_per_vm_family",
+                "compute.googleapis.com/quota/asynchronously_replicating_disk_pairs_per_project_region_pair/exceeded",
+                "compute.googleapis.com/quota/cpus_per_vm_family/exceeded",
+                "compute.googleapis.com/quota/gpus_per_gpu_family/exceeded",
+                "compute.googleapis.com/quota/inter_region_egress_bandwidth/exceeded",
+                "compute.googleapis.com/quota/inter_region_egress_bandwidth/usage",
+                "compute.googleapis.com/quota/inter_zone_egress_bandwidth/exceeded",
+                "compute.googleapis.com/quota/inter_zone_egress_bandwidth/usage",
+                "compute.googleapis.com/quota/local_ssd_total_storage_per_vm_family/exceeded",
+                "compute.googleapis.com/quota/preemptible_gpus_per_gpu_family/exceeded",
+                "compute.googleapis.com/quota/rdma_networking_cards_per_vm_family/exceeded",
+                "compute.googleapis.com/quota/reserved_resource_per_aggregate_reservation_per_cluster/exceeded",
+                "compute.googleapis.com/quota/statera_lb_per_org_per_region_per_folder/exceeded",
+                "compute.googleapis.com/quota/tpus_per_tpu_family/exceeded",
+                "compute.googleapis.com/tpus_per_tpu_family"
+              ],
+              "monitoredResource": "compute.googleapis.com/Location"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/interconnect_attachments_per_interconnect",
+                "compute.googleapis.com/l2_vlan_mappings_per_interconnect",
+                "compute.googleapis.com/quota/interconnect_attachments_per_interconnect/exceeded",
+                "compute.googleapis.com/quota/l2_vlan_mappings_per_interconnect/exceeded",
+                "compute.googleapis.com/quota/wire_groups_per_interconnect/exceeded",
+                "compute.googleapis.com/wire_groups_per_interconnect"
+              ],
+              "monitoredResource": "compute.googleapis.com/Interconnect"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/fqdns_per_global_network_firewall_policy",
+                "compute.googleapis.com/fqdns_per_hierarchical_firewall_policy",
+                "compute.googleapis.com/fqdns_per_regional_network_firewall_policy",
+                "compute.googleapis.com/quota/fqdns_per_global_network_firewall_policy/exceeded",
+                "compute.googleapis.com/quota/fqdns_per_hierarchical_firewall_policy/exceeded",
+                "compute.googleapis.com/quota/fqdns_per_regional_network_firewall_policy/exceeded",
+                "compute.googleapis.com/quota/rule_attributes_per_global_network_firewall_policy/exceeded",
+                "compute.googleapis.com/quota/rule_attributes_per_hierarchical_firewall_policy/exceeded",
+                "compute.googleapis.com/quota/rule_attributes_per_regional_network_firewall_policy/exceeded",
+                "compute.googleapis.com/rule_attributes_per_global_network_firewall_policy",
+                "compute.googleapis.com/rule_attributes_per_hierarchical_firewall_policy",
+                "compute.googleapis.com/rule_attributes_per_regional_network_firewall_policy"
+              ],
+              "monitoredResource": "compute.googleapis.com/FirewallPolicy"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/rule_attributes_per_regional_network_policy/exceeded",
+                "compute.googleapis.com/rule_attributes_per_regional_network_policy"
+              ],
+              "monitoredResource": "compute.googleapis.com/NetworkPolicy"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/advanced_rules_per_edge_security_policy",
+                "compute.googleapis.com/advanced_rules_per_regional_security_policy",
+                "compute.googleapis.com/advanced_rules_per_security_policy",
+                "compute.googleapis.com/quota/advanced_rules_per_edge_security_policy/exceeded",
+                "compute.googleapis.com/quota/advanced_rules_per_regional_security_policy/exceeded",
+                "compute.googleapis.com/quota/advanced_rules_per_security_policy/exceeded"
+              ],
+              "monitoredResource": "compute.googleapis.com/SecurityPolicy"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/wire_groups_bronze_unmetered_bandwidth_gbps/exceeded",
+                "compute.googleapis.com/quota/wire_groups_gold_unmetered_bandwidth_gbps/exceeded",
+                "compute.googleapis.com/quota/wire_groups_silver_unmetered_bandwidth_gbps/exceeded",
+                "compute.googleapis.com/wire_groups_gold_unmetered_bandwidth_gbps"
+              ],
+              "monitoredResource": "compute.googleapis.com/NetworkPathQuotasResource"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/disks_per_consistency_group",
+                "compute.googleapis.com/disks_per_snapshot_schedule",
+                "compute.googleapis.com/quota/disks_per_consistency_group/exceeded",
+                "compute.googleapis.com/quota/disks_per_snapshot_schedule/exceeded"
+              ],
+              "monitoredResource": "compute.googleapis.com/ResourcePolicy"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/global_concurrent_operations",
+                "compute.googleapis.com/quota/concurrent/global_concurrent_operations/exceeded",
+                "compute.googleapis.com/quota/concurrent/internal/global_concurrent_operations/combined_units",
+                "compute.googleapis.com/quota/concurrent/internal/regional_concurrent_operations/combined_units",
+                "compute.googleapis.com/quota/concurrent/regional_concurrent_operations/exceeded",
+                "compute.googleapis.com/regional_concurrent_operations"
+              ],
+              "monitoredResource": "compute.googleapis.com/OperationType"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/vm_extensions/extension/enforcement_status",
+                "compute.googleapis.com/vm_extensions/extension/health_status",
+                "compute.googleapis.com/vm_extensions/extension/cpu/max_usage",
+                "compute.googleapis.com/vm_extensions/extension/memory/used_bytes",
+                "compute.googleapis.com/vm_extensions/extension/evaluation_latency",
+                "compute.googleapis.com/vm_extensions/extension/enforcement_latency",
+                "compute.googleapis.com/vm_extensions/extension/e2e_latencies"
+              ],
+              "monitoredResource": "gce_instance"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/reservation/reserved",
+                "compute.googleapis.com/reservation/assured",
+                "compute.googleapis.com/reservation/used",
+                "compute.googleapis.com/reservation/internal/matching_instances",
+                "compute.googleapis.com/reservation/internal/prespuns_by_state",
+                "compute.googleapis.com/reservation/internal/unobtainable_slots",
+                "compute.googleapis.com/reservation/internal/reservation_details"
+              ],
+              "monitoredResource": "compute.googleapis.com/Reservation"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/future_reservation/internal/time_past_execution"
+              ],
+              "monitoredResource": "compute.googleapis.com/FutureReservation"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/storage_pool/capacity_overprovisioning",
+                "compute.googleapis.com/storage_pool/capacity_utilization",
+                "compute.googleapis.com/storage_pool/disks",
+                "compute.googleapis.com/storage_pool/iops_overprovisioning",
+                "compute.googleapis.com/storage_pool/iops_utilization",
+                "compute.googleapis.com/storage_pool/per_project/total_disk_provisioned_capacity",
+                "compute.googleapis.com/storage_pool/per_project/total_disk_provisioned_iops",
+                "compute.googleapis.com/storage_pool/per_project/total_disk_provisioned_throughput",
+                "compute.googleapis.com/storage_pool/provisioned_capacity",
+                "compute.googleapis.com/storage_pool/provisioned_iops",
+                "compute.googleapis.com/storage_pool/provisioned_throughput",
+                "compute.googleapis.com/storage_pool/throughput_overprovisioning",
+                "compute.googleapis.com/storage_pool/throughput_utilization",
+                "compute.googleapis.com/storage_pool/total_disk_provisioned_capacity",
+                "compute.googleapis.com/storage_pool/total_disk_provisioned_iops",
+                "compute.googleapis.com/storage_pool/total_disk_provisioned_throughput",
+                "compute.googleapis.com/storage_pool/used_capacity",
+                "compute.googleapis.com/storage_pool/used_iops",
+                "compute.googleapis.com/storage_pool/used_read_iops",
+                "compute.googleapis.com/storage_pool/used_read_throughput",
+                "compute.googleapis.com/storage_pool/used_throughput",
+                "compute.googleapis.com/storage_pool/used_write_iops",
+                "compute.googleapis.com/storage_pool/used_write_throughput"
+              ],
+              "monitoredResource": "compute.googleapis.com/StoragePool"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/disks_per_storage_pool",
+                "compute.googleapis.com/quota/disks_per_storage_pool/exceeded"
+              ],
+              "monitoredResource": "compute.googleapis.com/StoragePool"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/mrdma_nic/asapd_lite_uptime",
+                "compute.googleapis.com/mrdma_nic/build_label",
+                "compute.googleapis.com/mrdma_nic/ethtool_counters",
+                "compute.googleapis.com/mrdma_nic/sysfs_counters",
+                "compute.googleapis.com/mrdma_nic/rttcc_counters",
+                "compute.googleapis.com/mrdma_nic/rttcc_statistics",
+                "compute.googleapis.com/mrdma_nic/alerts",
+                "compute.googleapis.com/mrdma_nic/linkup",
+                "compute.googleapis.com/mrdma_nic/doca_telemetry_counters",
+                "compute.googleapis.com/mrdma_nic/doca_telemetry_statistics",
+                "compute.googleapis.com/mrdma_nic/nic_configs",
+                "compute.googleapis.com/mrdma_nic/nic_states",
+                "compute.googleapis.com/mrdma_nic/ethtool_link_settings"
+              ],
+              "monitoredResource": "compute.googleapis.com/MrdmaNic"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/alias_network_endpoints_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/alias_network_endpoints_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/broadcast_subnetworks_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/broadcast_subnetworks_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/cloud_router_prefixes_from_other_regions_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/cloud_router_prefixes_from_other_regions_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/cloud_router_prefixes_from_own_region_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/cloud_router_prefixes_from_own_region_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/cross_regional_internal_proxy_lb_config_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/cross_regional_internal_proxy_lb_config_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/dynamic_routes_per_region_per_peering_group/limit",
+                "compute.googleapis.com/quota/dynamic_routes_per_region_per_peering_group/usage",
+                "compute.googleapis.com/quota/firewall_rule_attributes_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/firewall_rule_attributes_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/firewall_rule_attributes_per_vpc_network/limit",
+                "compute.googleapis.com/quota/firewall_rule_attributes_per_vpc_network/usage",
+                "compute.googleapis.com/quota/firewall_rule_fqdns_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/firewall_rule_fqdns_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/firewall_rule_fqdns_per_vpc_network/limit",
+                "compute.googleapis.com/quota/firewall_rule_fqdns_per_vpc_network/usage",
+                "compute.googleapis.com/quota/gce_firewall_programmed_secure_tag_values_per_vpc_network/limit",
+                "compute.googleapis.com/quota/gce_firewall_programmed_secure_tag_values_per_vpc_network/usage",
+                "compute.googleapis.com/quota/global_internal_managed_forwarding_rules_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/global_internal_managed_forwarding_rules_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/global_network_firewall_policy_associations_per_vpc_network/limit",
+                "compute.googleapis.com/quota/global_network_firewall_policy_associations_per_vpc_network/usage",
+                "compute.googleapis.com/quota/global_network_firewall_policy_associations_per_vpc_network_system/limit",
+                "compute.googleapis.com/quota/global_network_firewall_policy_associations_per_vpc_network_system/usage",
+                "compute.googleapis.com/quota/instances_per_peering_group/limit",
+                "compute.googleapis.com/quota/instances_per_peering_group/usage",
+                "compute.googleapis.com/quota/instances_per_regional_vpc_network/limit",
+                "compute.googleapis.com/quota/instances_per_regional_vpc_network/usage",
+                "compute.googleapis.com/quota/instances_per_vpc_network/limit",
+                "compute.googleapis.com/quota/instances_per_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_peering_group/limit",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_peering_group/usage",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_regional_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_regional_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_per_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_with_global_access_per_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_lb_forwarding_rules_with_global_access_per_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_managed_forwarding_rules_per_peering_group/limit",
+                "compute.googleapis.com/quota/internal_managed_forwarding_rules_per_peering_group/usage",
+                "compute.googleapis.com/quota/internal_managed_forwarding_rules_per_regional_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_managed_forwarding_rules_per_regional_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_managed_forwarding_rules_per_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_managed_forwarding_rules_per_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_ha_rules_per_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_ha_rules_per_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_peering_group/limit",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_peering_group/usage",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_regional_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_regional_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_per_vpc_network/usage",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_with_global_access_per_vpc_network/limit",
+                "compute.googleapis.com/quota/internal_protocol_forwarding_rules_with_global_access_per_vpc_network/usage",
+                "compute.googleapis.com/quota/ip_aliases_per_peering_group/limit",
+                "compute.googleapis.com/quota/ip_aliases_per_peering_group/usage",
+                "compute.googleapis.com/quota/ip_aliases_per_regional_vpc_network/limit",
+                "compute.googleapis.com/quota/ip_aliases_per_regional_vpc_network/usage",
+                "compute.googleapis.com/quota/ip_aliases_per_vpc_network/limit",
+                "compute.googleapis.com/quota/ip_aliases_per_vpc_network/usage",
+                "compute.googleapis.com/quota/multicast_consumers_per_zone_per_vpc_network/limit",
+                "compute.googleapis.com/quota/multicast_consumers_per_zone_per_vpc_network/usage",
+                "compute.googleapis.com/quota/peerings_per_vpc_network/limit",
+                "compute.googleapis.com/quota/peerings_per_vpc_network/usage",
+                "compute.googleapis.com/quota/psc_google_apis_forwarding_rules_per_vpc_network/limit",
+                "compute.googleapis.com/quota/psc_google_apis_forwarding_rules_per_vpc_network/usage",
+                "compute.googleapis.com/quota/psc_ilb_consumer_forwarding_rules_per_producer_regional_vpc_network/limit",
+                "compute.googleapis.com/quota/psc_ilb_consumer_forwarding_rules_per_producer_regional_vpc_network/usage",
+                "compute.googleapis.com/quota/psc_ilb_consumer_forwarding_rules_per_producer_vpc_network/limit",
+                "compute.googleapis.com/quota/psc_ilb_consumer_forwarding_rules_per_producer_vpc_network/usage",
+                "compute.googleapis.com/quota/psc_incoming_connections_per_producer_vpc_network/limit",
+                "compute.googleapis.com/quota/psc_incoming_connections_per_producer_vpc_network/usage",
+                "compute.googleapis.com/quota/psc_outgoing_connections_per_consumer_vpc_network/limit",
+                "compute.googleapis.com/quota/psc_outgoing_connections_per_consumer_vpc_network/usage",
+                "compute.googleapis.com/quota/psc_propagated_connections_per_vpc_network/limit",
+                "compute.googleapis.com/quota/psc_propagated_connections_per_vpc_network/usage",
+                "compute.googleapis.com/quota/regional_backend_services_protocol_forwarding_fast_ha/limit",
+                "compute.googleapis.com/quota/regional_backend_services_protocol_forwarding_fast_ha/usage",
+                "compute.googleapis.com/quota/regional_external_managed_forwarding_rules_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/regional_external_managed_forwarding_rules_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/regional_external_proxy_lb_config_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/regional_external_proxy_lb_config_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/regional_fast_ip_move_backend_services_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/regional_fast_ip_move_backend_services_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/regional_fast_ip_move_domains_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/regional_fast_ip_move_domains_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/regional_internal_managed_forwarding_rules_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/regional_internal_managed_forwarding_rules_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/regional_internal_proxy_lb_config_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/regional_internal_proxy_lb_config_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/regional_network_firewall_policy_associations_per_region_per_vpc_network/limit",
+                "compute.googleapis.com/quota/regional_network_firewall_policy_associations_per_region_per_vpc_network/usage",
+                "compute.googleapis.com/quota/regional_network_firewall_policy_associations_per_region_per_vpc_network_system/limit",
+                "compute.googleapis.com/quota/regional_network_firewall_policy_associations_per_region_per_vpc_network_system/usage",
+                "compute.googleapis.com/quota/static_routes_per_peering_group/limit",
+                "compute.googleapis.com/quota/static_routes_per_peering_group/usage",
+                "compute.googleapis.com/quota/static_routes_per_vpc_network/limit",
+                "compute.googleapis.com/quota/static_routes_per_vpc_network/usage",
+                "compute.googleapis.com/quota/subnet_ranges_per_peering_group/limit",
+                "compute.googleapis.com/quota/subnet_ranges_per_peering_group/usage",
+                "compute.googleapis.com/quota/subnet_ranges_per_regional_vpc_network/limit",
+                "compute.googleapis.com/quota/subnet_ranges_per_regional_vpc_network/usage",
+                "compute.googleapis.com/quota/subnet_ranges_per_vpc_network/limit",
+                "compute.googleapis.com/quota/subnet_ranges_per_vpc_network/usage"
+              ],
+              "monitoredResource": "compute.googleapis.com/VpcNetwork"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/asynchronously_replicating_disk_pairs_per_project_region_pair/limit",
+                "compute.googleapis.com/quota/asynchronously_replicating_disk_pairs_per_project_region_pair/usage",
+                "compute.googleapis.com/quota/cpus_per_vm_family/limit",
+                "compute.googleapis.com/quota/cpus_per_vm_family/usage",
+                "compute.googleapis.com/quota/gpus_per_gpu_family/limit",
+                "compute.googleapis.com/quota/gpus_per_gpu_family/usage",
+                "compute.googleapis.com/quota/inter_region_egress_bandwidth/limit",
+                "compute.googleapis.com/quota/inter_zone_egress_bandwidth/limit",
+                "compute.googleapis.com/quota/local_ssd_total_storage_per_vm_family/limit",
+                "compute.googleapis.com/quota/local_ssd_total_storage_per_vm_family/usage",
+                "compute.googleapis.com/quota/preemptible_gpus_per_gpu_family/limit",
+                "compute.googleapis.com/quota/preemptible_gpus_per_gpu_family/usage",
+                "compute.googleapis.com/quota/rdma_networking_cards_per_vm_family/limit",
+                "compute.googleapis.com/quota/rdma_networking_cards_per_vm_family/usage",
+                "compute.googleapis.com/quota/reserved_resource_per_aggregate_reservation_per_cluster/limit",
+                "compute.googleapis.com/quota/reserved_resource_per_aggregate_reservation_per_cluster/usage",
+                "compute.googleapis.com/quota/statera_lb_per_org_per_region_per_folder/limit",
+                "compute.googleapis.com/quota/statera_lb_per_org_per_region_per_folder/usage",
+                "compute.googleapis.com/quota/tpus_per_tpu_family/limit",
+                "compute.googleapis.com/quota/tpus_per_tpu_family/usage"
+              ],
+              "monitoredResource": "compute.googleapis.com/Location"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/disks_per_consistency_group/limit",
+                "compute.googleapis.com/quota/disks_per_consistency_group/usage",
+                "compute.googleapis.com/quota/disks_per_snapshot_schedule/limit",
+                "compute.googleapis.com/quota/disks_per_snapshot_schedule/usage"
+              ],
+              "monitoredResource": "compute.googleapis.com/ResourcePolicy"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/wire_groups_bronze_unmetered_bandwidth_gbps/limit",
+                "compute.googleapis.com/quota/wire_groups_bronze_unmetered_bandwidth_gbps/usage",
+                "compute.googleapis.com/quota/wire_groups_gold_unmetered_bandwidth_gbps/limit",
+                "compute.googleapis.com/quota/wire_groups_gold_unmetered_bandwidth_gbps/usage",
+                "compute.googleapis.com/quota/wire_groups_silver_unmetered_bandwidth_gbps/limit",
+                "compute.googleapis.com/quota/wire_groups_silver_unmetered_bandwidth_gbps/usage"
+              ],
+              "monitoredResource": "compute.googleapis.com/NetworkPathQuotasResource"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/interconnect_attachments_per_interconnect/limit",
+                "compute.googleapis.com/quota/interconnect_attachments_per_interconnect/usage",
+                "compute.googleapis.com/quota/l2_vlan_mappings_per_interconnect/limit",
+                "compute.googleapis.com/quota/l2_vlan_mappings_per_interconnect/usage",
+                "compute.googleapis.com/quota/wire_groups_per_interconnect/limit",
+                "compute.googleapis.com/quota/wire_groups_per_interconnect/usage"
+              ],
+              "monitoredResource": "compute.googleapis.com/Interconnect"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/fqdns_per_global_network_firewall_policy/limit",
+                "compute.googleapis.com/quota/fqdns_per_global_network_firewall_policy/usage",
+                "compute.googleapis.com/quota/fqdns_per_hierarchical_firewall_policy/limit",
+                "compute.googleapis.com/quota/fqdns_per_hierarchical_firewall_policy/usage",
+                "compute.googleapis.com/quota/fqdns_per_regional_network_firewall_policy/limit",
+                "compute.googleapis.com/quota/fqdns_per_regional_network_firewall_policy/usage",
+                "compute.googleapis.com/quota/rule_attributes_per_global_network_firewall_policy/limit",
+                "compute.googleapis.com/quota/rule_attributes_per_global_network_firewall_policy/usage",
+                "compute.googleapis.com/quota/rule_attributes_per_hierarchical_firewall_policy/limit",
+                "compute.googleapis.com/quota/rule_attributes_per_hierarchical_firewall_policy/usage",
+                "compute.googleapis.com/quota/rule_attributes_per_regional_network_firewall_policy/limit",
+                "compute.googleapis.com/quota/rule_attributes_per_regional_network_firewall_policy/usage"
+              ],
+              "monitoredResource": "compute.googleapis.com/FirewallPolicy"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/rule_attributes_per_regional_network_policy/limit",
+                "compute.googleapis.com/quota/rule_attributes_per_regional_network_policy/usage"
+              ],
+              "monitoredResource": "compute.googleapis.com/NetworkPolicy"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/advanced_rules_per_edge_security_policy/limit",
+                "compute.googleapis.com/quota/advanced_rules_per_edge_security_policy/usage",
+                "compute.googleapis.com/quota/advanced_rules_per_regional_security_policy/limit",
+                "compute.googleapis.com/quota/advanced_rules_per_regional_security_policy/usage",
+                "compute.googleapis.com/quota/advanced_rules_per_security_policy/limit",
+                "compute.googleapis.com/quota/advanced_rules_per_security_policy/usage"
+              ],
+              "monitoredResource": "compute.googleapis.com/SecurityPolicy"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/concurrent/global_concurrent_operations/limit",
+                "compute.googleapis.com/quota/concurrent/regional_concurrent_operations/limit"
+              ],
+              "monitoredResource": "compute.googleapis.com/OperationType"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/disks_per_storage_pool/limit",
+                "compute.googleapis.com/quota/disks_per_storage_pool/usage"
+              ],
+              "monitoredResource": "compute.googleapis.com/StoragePool"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/gnlb_forwarding_rules_per_backend_service/exceeded"
+              ],
+              "monitoredResource": "compute.googleapis.com/BackendService"
+            },
+            {
+              "metrics": [
+                "compute.googleapis.com/quota/gnlb_forwarding_rules_per_backend_service/limit",
+                "compute.googleapis.com/quota/gnlb_forwarding_rules_per_backend_service/usage"
+              ],
+              "monitoredResource": "compute.googleapis.com/BackendService"
+            }
+          ]
+        },
+        "name": "compute.googleapis.com",
+        "quota": {},
+        "title": "Compute Engine API",
+        "usage": {
+          "requirements": [
+            "serviceusage.googleapis.com/tos/cloud",
+            "serviceusage.googleapis.com/billing-enabled"
+          ]
+        }
+      },
+      "name": "projects/48371073389/services/compute.googleapis.com",
+      "parent": "projects/48371073389",
+      "state": "ENABLED"
+    },
+    {
+      "config": {
+        "authentication": {},
+        "documentation": {
+          "summary": "Manages identity and access control for Google Cloud resources, including the creation of service accounts, which you can use to authenticate to Google and make API calls. Enabling this API also enables the IAM Service Account Credentials API (iamcredentials.googleapis.com). However, disabling this API doesn't disable the IAM Service Account Credentials API.\n"
+        },
+        "monitoredResources": [
+          {
+            "description": "An IAM Service Account.",
+            "displayName": "IAM Service Account",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project associated with this resource, such as 'my-project'.",
+                "key": "project_id"
+              },
+              {
+                "description": "The unique_id of the service account.",
+                "key": "unique_id"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "iam_service_account"
+          },
+          {
+            "description": "A workload identity pool provider.",
+            "displayName": "Workload Identity Pool Provider",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project associated with this resource, such as 'my-project'.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The location of the resource.",
+                "key": "location"
+              },
+              {
+                "description": "The ID of the provider's workload identity pool parent resource.",
+                "key": "pool_id"
+              },
+              {
+                "description": "The ID of the workload identity pool provider resource.",
+                "key": "provider_id"
+              }
+            ],
+            "launchStage": "BETA",
+            "type": "iam.googleapis.com/WorkloadIdentityPoolProvider"
+          },
+          {
+            "description": "A workforce identity pool provider.",
+            "displayName": "Workforce Identity Pool Provider",
+            "labels": [
+              {
+                "description": "The identifier of the Google Cloud organization associated with this resource.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The location of the resource.",
+                "key": "location"
+              },
+              {
+                "description": "The ID of the provider's workforce pool parent resource.",
+                "key": "pool_id"
+              },
+              {
+                "description": "The ID of the workforce pool provider resource.",
+                "key": "provider_id"
+              }
+            ],
+            "launchStage": "BETA",
+            "type": "iam.googleapis.com/WorkforcePoolProvider"
+          },
+          {
+            "description": "The parent of the AccessPolicy.",
+            "displayName": "AccessPolicy Parent",
+            "labels": [
+              {
+                "description": "The identifier of the GCP resource container associated with the AccessPolicy, such as \"my-project\" or \"organizations/123\".",
+                "key": "resource_container"
+              },
+              {
+                "description": "The location of the AccessPolicy.",
+                "key": "location"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "iam.googleapis.com/Location"
+          }
+        ],
+        "monitoring": {
+          "consumerDestinations": [
+            {
+              "metrics": [
+                "iam.googleapis.com/workforce_identity_federation/count",
+                "iam.googleapis.com/workforce_identity_federation/last_attributes_sync_event"
+              ],
+              "monitoredResource": "iam.googleapis.com/WorkforcePoolProvider"
+            },
+            {
+              "metrics": [
+                "iam.googleapis.com/workload_identity_federation/count",
+                "iam.googleapis.com/workload_identity_federation/key_usage_count"
+              ],
+              "monitoredResource": "iam.googleapis.com/WorkloadIdentityPoolProvider"
+            },
+            {
+              "metrics": [
+                "iam.googleapis.com/service_account/authn_events_count",
+                "iam.googleapis.com/service_account/key/authn_events_count"
+              ],
+              "monitoredResource": "iam_service_account"
+            },
+            {
+              "metrics": [
+                "iam.googleapis.com/accesspolicies/bindings_per_access_policy"
+              ],
+              "monitoredResource": "iam.googleapis.com/Location"
+            },
+            {
+              "metrics": [
+                "iam.googleapis.com/quota/accesspolicies/bindings_per_access_policy/limit",
+                "iam.googleapis.com/quota/accesspolicies/bindings_per_access_policy/usage"
+              ],
+              "monitoredResource": "iam.googleapis.com/Location"
+            },
+            {
+              "metrics": [
+                "iam.googleapis.com/quota/accesspolicies/bindings_per_access_policy/exceeded"
+              ],
+              "monitoredResource": "iam.googleapis.com/Location"
+            }
+          ]
+        },
+        "name": "iam.googleapis.com",
+        "quota": {},
+        "title": "Identity and Access Management (IAM) API",
+        "usage": {
+          "requirements": [
+            "serviceusage.googleapis.com/tos/cloud"
+          ]
+        }
+      },
+      "name": "projects/48371073389/services/iam.googleapis.com",
+      "parent": "projects/48371073389",
+      "state": "ENABLED"
+    },
+    {
+      "config": {
+        "authentication": {},
+        "documentation": {
+          "summary": "Writes log entries and manages your Cloud Logging configuration."
+        },
+        "monitoredResources": [
+          {
+            "description": "A cloud logging specialization target schema of cloud.ChargedProject.",
+            "displayName": "Cloud logging target",
+            "labels": [
+              {
+                "description": "The monitored resource container. Could be project, workspace, etc.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The service-specific notion of location.",
+                "key": "location"
+              },
+              {
+                "description": "The name of the API service with which the data is associated (e.g.,'logging.googleapis.com').",
+                "key": "service"
+              }
+            ],
+            "launchStage": "ALPHA",
+            "type": "logging.googleapis.com/ChargedProject"
+          }
+        ],
+        "monitoring": {
+          "consumerDestinations": [
+            {
+              "metrics": [
+                "logging.googleapis.com/billing/ingested_bytes",
+                "logging.googleapis.com/billing/stored_bytes"
+              ],
+              "monitoredResource": "logging.googleapis.com/ChargedProject"
+            }
+          ]
+        },
+        "name": "logging.googleapis.com",
+        "quota": {},
+        "title": "Cloud Logging API",
+        "usage": {
+          "requirements": [
+            "serviceusage.googleapis.com/tos/cloud"
+          ]
+        }
+      },
+      "name": "projects/48371073389/services/logging.googleapis.com",
+      "parent": "projects/48371073389",
+      "state": "ENABLED"
+    },
+    {
+      "config": {
+        "authentication": {},
+        "documentation": {
+          "summary": "Manages your Cloud Monitoring data and configurations.\n"
+        },
+        "monitoredResources": [
+          {
+            "description": "A cloud monitoring specialization target schema of cloud.ChargedProject.",
+            "displayName": "Cloud monitoring target",
+            "labels": [
+              {
+                "description": "The monitored resource container. Could be project, workspace, etc.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The service-specific notion of location.",
+                "key": "location"
+              },
+              {
+                "description": "The name of the API service with which the data is associated (e.g.,'monitoring.googleapis.com').",
+                "key": "service"
+              }
+            ],
+            "launchStage": "ALPHA",
+            "type": "monitoring.googleapis.com/ChargedProject"
+          },
+          {
+            "description": "Information about a user-written metric in Cloud Monitoring. This resource is deprecated. Please refer to https://cloud.google.com/monitoring/docs/metrics-management#diagnostics and https://cloud.google.com/monitoring/docs/metrics-management#view-summary for how monitor the ingestion of metrics.",
+            "displayName": "(DEPRECATED) Metric Statistics",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project to which the metric is written, such as 'my-project'.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The cloud region where the metric was received.",
+                "key": "location"
+              },
+              {
+                "description": "The metric type.",
+                "key": "metric_type"
+              }
+            ],
+            "launchStage": "DEPRECATED",
+            "type": "monitoring.googleapis.com/MetricStatistics"
+          },
+          {
+            "description": "Attribution for metric ingestion.",
+            "displayName": "Metric Ingestion Attribution",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project to which the metric is written, such as 'my-project'.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The location of the resource that the metric ingestion was associated with, unless it was 'global', in which case this will be the cloud region where the metric was received.",
+                "key": "location"
+              },
+              {
+                "description": "The dimension used for attribution reporting. It is not recommended that aggregations are performed across dimensions because a single metric point can be recorded with multiple dimensions which could cause double counting. Currently only \"namespace\" and \"cluster\" are supported.",
+                "key": "attribution_dimension"
+              },
+              {
+                "description": "The attribution id of the source of the metric write.",
+                "key": "attribution_id"
+              }
+            ],
+            "launchStage": "BETA",
+            "type": "monitoring.googleapis.com/MetricIngestionAttribution"
+          },
+          {
+            "labels": [
+              {
+                "key": "cloud.googleapis.com/project"
+              },
+              {
+                "key": "monitoring.googleapis.com/service"
+              },
+              {
+                "key": "cloud.googleapis.com/location"
+              },
+              {
+                "key": "cloud.googleapis.com/uid"
+              }
+            ],
+            "type": "monitoring.googleapis.com/charged_project"
+          },
+          {
+            "description": "A resource type that is not associated with any specific resource.",
+            "displayName": "Global",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project associated with this resource, such as \"my-project\".",
+                "key": "project_id"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "global"
+          },
+          {
+            "description": "A Kubernetes container instance.",
+            "displayName": "Kubernetes Container",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project associated with this resource, such as \"my-project\".",
+                "key": "project_id"
+              },
+              {
+                "description": "The physical location of the cluster that contains the container.",
+                "key": "location"
+              },
+              {
+                "description": "The name of the cluster that the container is running in.",
+                "key": "cluster_name"
+              },
+              {
+                "description": "The name of the namespace that the container is running in.",
+                "key": "namespace_name"
+              },
+              {
+                "description": "The name of the pod that the container is running in.",
+                "key": "pod_name"
+              },
+              {
+                "description": "The name of the container.",
+                "key": "container_name"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "k8s_container"
+          },
+          {
+            "description": "A revision in Cloud Run.",
+            "displayName": "Cloud Run Revision",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project associated with this resource, such as \"my-project\".",
+                "key": "project_id"
+              },
+              {
+                "description": "Name of the service.",
+                "key": "service_name"
+              },
+              {
+                "description": "Name of the monitored revision.",
+                "key": "revision_name"
+              },
+              {
+                "description": "Region where the service is running.",
+                "key": "location"
+              },
+              {
+                "description": "Name of the configuration which created the monitored revision.",
+                "key": "configuration_name"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "cloud_run_revision"
+          }
+        ],
+        "monitoring": {
+          "consumerDestinations": [
+            {
+              "metrics": [
+                "monitoring.googleapis.com/billing/bytes_ingested"
+              ],
+              "monitoredResource": "monitoring.googleapis.com/charged_project"
+            },
+            {
+              "metrics": [
+                "monitoring.googleapis.com/billing/bytes_ingested",
+                "monitoring.googleapis.com/billing/samples_ingested",
+                "monitoring.googleapis.com/internal/billing/time_series_billed_for_queries_count",
+                "monitoring.googleapis.com/internal/stats/filtered_sample_count",
+                "monitoring.googleapis.com/internal/stats/filtered_byte_count",
+                "monitoring.googleapis.com/internal/stats/metrics_queried_count"
+              ],
+              "monitoredResource": "monitoring.googleapis.com/ChargedProject"
+            },
+            {
+              "metrics": [
+                "monitoring.googleapis.com/collection/write_request_point_count"
+              ],
+              "monitoredResource": "monitoring.googleapis.com/MetricStatistics"
+            },
+            {
+              "metrics": [
+                "monitoring.googleapis.com/collection/attribution/write_sample_count"
+              ],
+              "monitoredResource": "monitoring.googleapis.com/MetricIngestionAttribution"
+            },
+            {
+              "metrics": [
+                "monitoring.googleapis.com/billing/bytes_ingested_hourly",
+                "monitoring.googleapis.com/billing/samples_ingested_hourly",
+                "monitoring.googleapis.com/stats/filtered_byte_count",
+                "monitoring.googleapis.com/stats/filtered_sample_count",
+                "monitoring.googleapis.com/stats/metrics_queried_hourly_count",
+                "monitoring.googleapis.com/billing/time_series_billed_for_queries_count",
+                "monitoring.googleapis.com/stats/num_time_series",
+                "monitoring.googleapis.com/cardinality/max_streams_per_category",
+                "monitoring.googleapis.com/cardinality/max_streams_per_metric",
+                "monitoring.googleapis.com/prober/create_service_time_series",
+                "monitoring.googleapis.com/prober/regional_create_service_time_series",
+                "monitoring.googleapis.com/prober/time_series_regional",
+                "monitoring.googleapis.com/prober/time_series_global"
+              ],
+              "monitoredResource": "global"
+            },
+            {
+              "metrics": [
+                "monitoring.googleapis.com/prober/create_service_time_series",
+                "monitoring.googleapis.com/prober/regional_create_service_time_series",
+                "monitoring.googleapis.com/prober/time_series_regional",
+                "monitoring.googleapis.com/prober/time_series_global"
+              ],
+              "monitoredResource": "k8s_container"
+            },
+            {
+              "metrics": [
+                "monitoring.googleapis.com/raw_uptime/content_mismatch",
+                "monitoring.googleapis.com/raw_uptime/request_latency",
+                "monitoring.googleapis.com/raw_uptime/error_code",
+                "monitoring.googleapis.com/raw_uptime/http_status",
+                "monitoring.googleapis.com/raw_uptime/time_until_ssl_cert_expires",
+                "monitoring.googleapis.com/raw_uptime/check_passed",
+                "monitoring.googleapis.com/raw_uptime/http_request_count",
+                "monitoring.googleapis.com/raw_uptime/http_error_count",
+                "monitoring.googleapis.com/raw_uptime/port_request_count",
+                "monitoring.googleapis.com/raw_uptime/port_error_count"
+              ],
+              "monitoredResource": "cloud_run_revision"
+            }
+          ]
+        },
+        "name": "monitoring.googleapis.com",
+        "quota": {},
+        "title": "Cloud Monitoring API",
+        "usage": {
+          "requirements": [
+            "serviceusage.googleapis.com/tos/cloud"
+          ]
+        }
+      },
+      "name": "projects/48371073389/services/monitoring.googleapis.com",
+      "parent": "projects/48371073389",
+      "state": "ENABLED"
+    },
+    {
+      "config": {
+        "authentication": {},
+        "documentation": {
+          "summary": "Lets you store and retrieve potentially-large, immutable data objects."
+        },
+        "monitoredResources": [
+          {
+            "description": "storage.googleapis.com/StorageBucketRelocate target schema.",
+            "displayName": "Cloud Storage Long Running Operation",
+            "labels": [
+              {
+                "description": "The monitored resource container. Usually a project.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The location of the resource.",
+                "key": "location"
+              },
+              {
+                "description": "The bucket name associated with the resource.",
+                "key": "bucket_name"
+              },
+              {
+                "description": "The destination location for the relocation.",
+                "key": "destination_location"
+              },
+              {
+                "description": "The unique identifier for the relocation.",
+                "key": "move_id"
+              },
+              {
+                "description": "The type of the move.",
+                "key": "move_type"
+              }
+            ],
+            "launchStage": "BETA",
+            "type": "storage.googleapis.com/StorageBucketRelocate"
+          },
+          {
+            "description": "GCS Location.",
+            "displayName": "GCS Location",
+            "labels": [
+              {
+                "description": "The project number of the bucket.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The location of the bucket.",
+                "key": "location"
+              }
+            ],
+            "launchStage": "ALPHA",
+            "type": "storage.googleapis.com/Location"
+          },
+          {
+            "description": "GCS Project.",
+            "displayName": "GCS Project",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project associated with this resource, such as \\\"my-project\\\".",
+                "key": "resource_container"
+              },
+              {
+                "description": "The location where the quota is consumed. It is a region for regional quota, or a zone for zonal quota, or \\\"global\\\" otherwise.",
+                "key": "location"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "storage.googleapis.com/Project"
+          },
+          {
+            "labels": [
+              {
+                "key": "storage.googleapis.com/bucket_name"
+              },
+              {
+                "key": "storage.googleapis.com/bucket_storage_class"
+              },
+              {
+                "key": "cloud.googleapis.com/location"
+              },
+              {
+                "key": "cloud.googleapis.com/project"
+              }
+            ],
+            "type": "storage.googleapis.com/storage"
+          },
+          {
+            "description": "storage.googleapis.com/Storage target schema.",
+            "displayName": "Cloud Storage",
+            "labels": [
+              {
+                "description": "The monitored resource container. Usually a project.",
+                "key": "resource_container"
+              },
+              {
+                "description": "The location of the resource.",
+                "key": "location"
+              },
+              {
+                "description": "The bucket name associated with the resource.",
+                "key": "bucket_name"
+              }
+            ],
+            "launchStage": "BETA",
+            "type": "storage.googleapis.com/Storage"
+          },
+          {
+            "description": "A Google Cloud Storage (GCS) bucket.",
+            "displayName": "GCS Bucket",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project associated with this resource, such as \"my-project\".",
+                "key": "project_id"
+              },
+              {
+                "description": "An immutable name of the bucket.",
+                "key": "bucket_name"
+              },
+              {
+                "description": "Location of the bucket.",
+                "key": "location"
+              }
+            ],
+            "launchStage": "GA",
+            "type": "gcs_bucket"
+          },
+          {
+            "description": "A Google Cloud Storage (GCS) client.",
+            "displayName": "GCS Client",
+            "labels": [
+              {
+                "description": "The identifier of the GCP project associated with this resource, such as \"my-project\".",
+                "key": "project_id"
+              },
+              {
+                "description": "The location parsed from `cloud.region`.",
+                "key": "location"
+              },
+              {
+                "description": "The cloud platform on which the GCS client runs.",
+                "key": "cloud_platform"
+              },
+              {
+                "description": "The ID of the host (usually a VM) on which the GCS client runs.",
+                "key": "host_id"
+              },
+              {
+                "description": "An UUID auto-generated by the client for the identification purpose.",
+                "key": "instance_id"
+              },
+              {
+                "description": "The API used for communication. The available values are GRPC, JSON, and XML.",
+                "key": "api"
+              }
+            ],
+            "launchStage": "BETA",
+            "type": "storage.googleapis.com/Client"
+          }
+        ],
+        "monitoring": {
+          "consumerDestinations": [
+            {
+              "metrics": [
+                "storage.googleapis.com/storage/total_bytes",
+                "storage.googleapis.com/storage/object_count"
+              ],
+              "monitoredResource": "storage.googleapis.com/storage"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/bucketrelocate/estimated_remaining_sync_duration",
+                "storage.googleapis.com/bucketrelocate/estimated_write_downtime_duration",
+                "storage.googleapis.com/bucketrelocate/write_lock_duration",
+                "storage.googleapis.com/bucketrelocate/bytes_moved",
+                "storage.googleapis.com/bucketrelocate/objects_moved",
+                "storage.googleapis.com/bucketrelocate/sync_count",
+                "storage.googleapis.com/bucketrelocate/status_count",
+                "storage.googleapis.com/bucketrelocate/status_changed_count",
+                "storage.googleapis.com/internal/bucketrelocate/progress_staleness",
+                "storage.googleapis.com/bucketrelocate/progress_staleness"
+              ],
+              "monitoredResource": "storage.googleapis.com/StorageBucketRelocate"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/dualregion_anywhere_cache_egress_bandwidth",
+                "storage.googleapis.com/dualregion_google_egress_bandwidth",
+                "storage.googleapis.com/dualregion_internet_egress_bandwidth",
+                "storage.googleapis.com/quota/dualregion_anywhere_cache_egress_bandwidth/exceeded",
+                "storage.googleapis.com/quota/dualregion_anywhere_cache_egress_bandwidth/usage",
+                "storage.googleapis.com/quota/dualregion_google_egress_bandwidth/exceeded",
+                "storage.googleapis.com/quota/dualregion_google_egress_bandwidth/usage",
+                "storage.googleapis.com/quota/dualregion_internet_egress_bandwidth/exceeded",
+                "storage.googleapis.com/quota/dualregion_internet_egress_bandwidth/usage",
+                "storage.googleapis.com/quota/dualregion_request_rate/exceeded",
+                "storage.googleapis.com/quota/dualregion_request_rate/usage",
+                "storage.googleapis.com/quota/non_enterprise_core_max_bytes/exceeded",
+                "storage.googleapis.com/quota/total_core_bytes/exceeded",
+                "storage.googleapis.com/quota/total_non_zonal_bytes/exceeded"
+              ],
+              "monitoredResource": "storage.googleapis.com/Project"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/anywhere_cache_metering/cache_storage_bytes_count",
+                "storage.googleapis.com/anywhere_cache_metering/cache_storage_kbsec_count",
+                "storage.googleapis.com/anywhere_cache_metering/eviction_byte_count",
+                "storage.googleapis.com/anywhere_cache_metering/ingested_billable_bytes_count",
+                "storage.googleapis.com/rapid_cache_ultra_metering/cache_storage_bytes_count",
+                "storage.googleapis.com/rapid_cache_ultra_metering/cache_storage_kbsec_count",
+                "storage.googleapis.com/rapid_cache_ultra_metering/eviction_byte_count",
+                "storage.googleapis.com/rapid_cache_ultra_metering/ingested_billable_bytes_count"
+              ],
+              "monitoredResource": "storage.googleapis.com/Storage"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/anywhere_cache/egress_bytes_count",
+                "storage.googleapis.com/anywhere_cache/get_operations_count",
+                "storage.googleapis.com/anywhere_cache/ingested_bytes_count",
+                "storage.googleapis.com/anywhere_cache/request_count",
+                "storage.googleapis.com/anywhere_cache/sent_bytes_count",
+                "storage.googleapis.com/anywhere_cache_recommender/simulated_cache_size",
+                "storage.googleapis.com/anywhere_cache_recommender/simulated_egress_byte_count",
+                "storage.googleapis.com/anywhere_cache_recommender/simulated_ingested_byte_count",
+                "storage.googleapis.com/anywhere_cache_recommender/simulated_read_ops_count",
+                "storage.googleapis.com/api/lro_count",
+                "storage.googleapis.com/api/request_count",
+                "storage.googleapis.com/api/request_latencies",
+                "storage.googleapis.com/authn/authentication_count",
+                "storage.googleapis.com/authz/acl_based_object_access_count",
+                "storage.googleapis.com/authz/acl_operations_count",
+                "storage.googleapis.com/authz/object_specific_acl_mutation_count",
+                "storage.googleapis.com/auto_annotate/operations/model_count",
+                "storage.googleapis.com/auto_annotate/operations/pending_objects",
+                "storage.googleapis.com/auto_annotate/operations/processed_object_count",
+                "storage.googleapis.com/auto_annotate/operations/request_count",
+                "storage.googleapis.com/autoclass/transition_operation_count",
+                "storage.googleapis.com/autoclass/transitioned_bytes_count",
+                "storage.googleapis.com/network/received_bytes_count",
+                "storage.googleapis.com/network/sent_bytes_count",
+                "storage.googleapis.com/replication/meeting_rpo",
+                "storage.googleapis.com/replication/missing_rpo_minutes_last_30d",
+                "storage.googleapis.com/replication/object_replications_last_30d",
+                "storage.googleapis.com/replication/time_since_metrics_updated",
+                "storage.googleapis.com/replication/turbo_max_delay",
+                "storage.googleapis.com/replication/v2/object_replications_last_30d",
+                "storage.googleapis.com/replication/v2/time_since_metrics_updated",
+                "storage.googleapis.com/storage/total_byte_seconds",
+                "storage.googleapis.com/storage/v2/deleted_bytes",
+                "storage.googleapis.com/storage/v2/total_byte_seconds",
+                "storage.googleapis.com/storage/v2/total_bytes",
+                "storage.googleapis.com/storage/v2/total_count",
+                "storage.googleapis.com/temporary/anywhere_cache/request_count",
+                "storage.googleapis.com/temporary/anywhere_cache/sent_bytes_count",
+                "storage.googleapis.com/temporary/api/request_count",
+                "storage.googleapis.com/temporary/network/received_bytes_count",
+                "storage.googleapis.com/temporary/network/sent_bytes_count",
+                "storage.googleapis.com/auto_annotate/storage/annotated_objects",
+                "storage.googleapis.com/auto_annotate/storage/model_outputs"
+              ],
+              "monitoredResource": "gcs_bucket"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/client/grpc/client/attempt/started",
+                "storage.googleapis.com/client/grpc/client/attempt/duration",
+                "storage.googleapis.com/client/grpc/client/attempt/sent_total_compressed_message_size",
+                "storage.googleapis.com/client/grpc/client/attempt/rcvd_total_compressed_message_size",
+                "storage.googleapis.com/client/grpc/client/call/duration"
+              ],
+              "monitoredResource": "storage.googleapis.com/Client"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/anywhere_cache_storage_size",
+                "storage.googleapis.com/quota/anywhere_cache_storage_size/exceeded"
+              ],
+              "monitoredResource": "storage.googleapis.com/Storage"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/quota/dualregion_anywhere_cache_egress_bandwidth/limit",
+                "storage.googleapis.com/quota/dualregion_google_egress_bandwidth/limit",
+                "storage.googleapis.com/quota/dualregion_internet_egress_bandwidth/limit",
+                "storage.googleapis.com/quota/dualregion_request_rate/limit",
+                "storage.googleapis.com/quota/non_enterprise_core_max_bytes/limit",
+                "storage.googleapis.com/quota/non_enterprise_core_max_bytes/usage",
+                "storage.googleapis.com/quota/total_core_bytes/limit",
+                "storage.googleapis.com/quota/total_core_bytes/usage",
+                "storage.googleapis.com/quota/total_non_zonal_bytes/limit",
+                "storage.googleapis.com/quota/total_non_zonal_bytes/usage"
+              ],
+              "monitoredResource": "storage.googleapis.com/Project"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/quota/anywhere_cache_storage_size/limit",
+                "storage.googleapis.com/quota/anywhere_cache_storage_size/usage"
+              ],
+              "monitoredResource": "storage.googleapis.com/Storage"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/rapid_cache_metering/cache_storage_bytes_count",
+                "storage.googleapis.com/rapid_cache_metering/cache_storage_kbsec_count",
+                "storage.googleapis.com/rapid_cache_metering/eviction_byte_count",
+                "storage.googleapis.com/rapid_cache_metering/ingested_billable_bytes_count",
+                "storage.googleapis.com/rapid_cache_storage_size"
+              ],
+              "monitoredResource": "storage.googleapis.com/Storage"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/quota/turbo_replication_ingress_bandwidth/exceeded",
+                "storage.googleapis.com/quota/turbo_replication_ingress_bandwidth/usage"
+              ],
+              "monitoredResource": "storage.googleapis.com/Location"
+            },
+            {
+              "metrics": [
+                "storage.googleapis.com/quota/turbo_replication_ingress_bandwidth/limit"
+              ],
+              "monitoredResource": "storage.googleapis.com/Location"
+            }
+          ]
+        },
+        "name": "storage.googleapis.com",
+        "quota": {},
+        "title": "Cloud Storage API",
+        "usage": {
+          "requirements": [
+            "serviceusage.googleapis.com/tos/cloud"
+          ]
+        }
+      },
+      "name": "projects/48371073389/services/storage.googleapis.com",
+      "parent": "projects/48371073389",
+      "state": "ENABLED"
+    }
+  ],
+  "project_info_describe": {
+    "name": "sage-rcc-8dbf5f",
+    "defaultServiceAccount": "48371073389-compute@developer.gserviceaccount.com",
+    "defaultNetworkTier": "PREMIUM",
+    "creationTimestamp": "2026-09-15T09:07:34.764-07:00",
+    "quotas": [
+      {
+        "limit": 8.0,
+        "metric": "STATIC_ADDRESSES",
+        "usage": 0.0
+      },
+      {
+        "limit": 8.0,
+        "metric": "IN_USE_ADDRESSES",
+        "usage": 0.0
+      },
+      {
+        "limit": 12.0,
+        "metric": "CPUS_ALL_REGIONS",
+        "usage": 0.0
+      },
+      {
+        "limit": 0.0,
+        "metric": "GPUS_ALL_REGIONS",
+        "usage": 0.0
+      }
+    ]
+  },
+  "firewall_rules_list": [
+    {
+      "allowed": [
+        {
+          "IPProtocol": "icmp"
+        }
+      ],
+      "creationTimestamp": "2026-09-15T09:08:14.085-07:00",
+      "description": "Allow ICMP from anywhere",
+      "direction": "INGRESS",
+      "disabled": false,
+      "id": "1916667418428887937",
+      "kind": "compute#firewall",
+      "logConfig": {
+        "enable": false
+      },
+      "name": "default-allow-icmp",
+      "network": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/networks/default",
+      "priority": 65534,
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/firewalls/default-allow-icmp",
+      "sourceRanges": [
+        "0.0.0.0/0"
+      ]
+    },
+    {
+      "allowed": [
+        {
+          "IPProtocol": "tcp",
+          "ports": [
+            "0-65535"
+          ]
+        },
+        {
+          "IPProtocol": "udp",
+          "ports": [
+            "0-65535"
+          ]
+        },
+        {
+          "IPProtocol": "icmp"
+        }
+      ],
+      "creationTimestamp": "2026-09-15T09:08:14.032-07:00",
+      "description": "Allow internal traffic on the default network",
+      "direction": "INGRESS",
+      "disabled": false,
+      "id": "1596792333125604225",
+      "kind": "compute#firewall",
+      "logConfig": {
+        "enable": false
+      },
+      "name": "default-allow-internal",
+      "network": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/networks/default",
+      "priority": 65534,
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/firewalls/default-allow-internal",
+      "sourceRanges": [
+        "10.128.0.0/9"
+      ]
+    },
+    {
+      "allowed": [
+        {
+          "IPProtocol": "tcp",
+          "ports": [
+            "3389"
+          ]
+        }
+      ],
+      "creationTimestamp": "2026-09-15T09:08:14.066-07:00",
+      "description": "Allow RDP from anywhere",
+      "direction": "INGRESS",
+      "disabled": false,
+      "id": "1637895969012241281",
+      "kind": "compute#firewall",
+      "logConfig": {
+        "enable": false
+      },
+      "name": "default-allow-rdp",
+      "network": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/networks/default",
+      "priority": 65534,
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/firewalls/default-allow-rdp",
+      "sourceRanges": [
+        "0.0.0.0/0"
+      ]
+    },
+    {
+      "allowed": [
+        {
+          "IPProtocol": "tcp",
+          "ports": [
+            "22"
+          ]
+        }
+      ],
+      "creationTimestamp": "2026-09-15T09:08:14.049-07:00",
+      "description": "Allow SSH from anywhere",
+      "direction": "INGRESS",
+      "disabled": false,
+      "id": "1362552384534139777",
+      "kind": "compute#firewall",
+      "logConfig": {
+        "enable": false
+      },
+      "name": "default-allow-ssh",
+      "network": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/networks/default",
+      "priority": 65534,
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/firewalls/default-allow-ssh",
+      "sourceRanges": [
+        "0.0.0.0/0"
+      ]
+    }
+  ],
+  "quotas_info_list": [
+    {
+      "containerType": "PROJECT",
+      "dimensionsInfos": [
+        {
+          "applicableLocations": [
+            "global"
+          ],
+          "details": {
+            "value": "12"
+          }
+        }
+      ],
+      "isPrecise": true,
+      "metric": "compute.googleapis.com/cpus_all_regions",
+      "metricDisplayName": "CPUs (all regions)",
+      "metricUnit": "1",
+      "name": "projects/48371073389/locations/global/services/compute.googleapis.com/quotaInfos/CPUS-ALL-REGIONS-per-project",
+      "quotaDisplayName": "CPUs (all regions)",
+      "quotaId": "CPUS-ALL-REGIONS-per-project",
+      "quotaIncreaseEligibility": {
+        "isEligible": true
+      },
+      "service": "compute.googleapis.com"
+    },
+    {
+      "containerType": "PROJECT",
+      "dimensionsInfos": [
+        {
+          "applicableLocations": [
+            "global"
+          ],
+          "details": {}
+        }
+      ],
+      "isPrecise": true,
+      "metric": "compute.googleapis.com/gpus_all_regions",
+      "metricDisplayName": "GPUs (all regions)",
+      "metricUnit": "1",
+      "name": "projects/48371073389/locations/global/services/compute.googleapis.com/quotaInfos/GPUS-ALL-REGIONS-per-project",
+      "quotaDisplayName": "GPUs (all regions)",
+      "quotaId": "GPUS-ALL-REGIONS-per-project",
+      "quotaIncreaseEligibility": {
+        "isEligible": true
+      },
+      "service": "compute.googleapis.com"
+    }
+  ],
+  "iam_policy": {
+    "_trimmed": "only the bindings naming 48371073389-compute@developer.gserviceaccount.com; the rest of the policy names real people",
+    "bindings": [
+      {
+        "members": [
+          "serviceAccount:48371073389-compute@developer.gserviceaccount.com"
+        ],
+        "role": "roles/batch.agentReporter"
+      },
+      {
+        "members": [
+          "serviceAccount:48371073389-compute@developer.gserviceaccount.com"
+        ],
+        "role": "roles/logging.logWriter"
+      }
+    ],
+    "version": 1
+  }
+}
