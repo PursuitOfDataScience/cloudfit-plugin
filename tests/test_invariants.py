@@ -121,6 +121,8 @@ def test_every_fixture_declares_whether_it_is_real():
 def test_the_recorded_slurmwatch_fixtures_are_not_demo_output():
     for path in FIXTURES.glob("slurmwatch_*.json"):
         doc = json.loads(path.read_text())
+        if doc.get("telemetry_available") is False:
+            continue  # the no-Slurm facts view has no telemetry to be mock
         assert doc.get("mock") is False, path.name
         assert doc["cpu"]["source"] != "mock", path.name
 

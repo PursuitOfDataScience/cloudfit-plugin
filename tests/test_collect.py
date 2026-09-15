@@ -156,3 +156,26 @@ def test_placement_says_so_when_the_job_is_not_placed_yet():
     out = placement("59400001", runner)
     assert out["nodes"] == []
     assert "not yet placed" in out["note"]
+
+
+def test_a_machine_with_no_slurm_gets_slurmwatchs_own_reason():
+    """slurmwatch switches to a flat facts-only schema when Slurm is unreachable."""
+    from conftest import load_json
+
+    doc = load_json("slurmwatch_no_slurm_facts_real.json")
+    assert doc["telemetry_available"] is False
+    runner = FakeRunner().on("slurmwatch", stdout=json.dumps(doc))
+    result = measure("58107383", runner)
+    assert result.observation is None  # not an all-null observation
+    assert "Slurm binary not found" in result.warnings[-1]
+    assert result.raw is not None
+    assert len(runner.calls) == 1  # no srun hop attempted
+
+
+def test_the_flat_schema_is_never_parsed_as_telemetry():
+    from conftest import load_json
+
+    obs = observation_from_slurmwatch(load_json("slurmwatch_no_slurm_facts_real.json"))
+    assert obs.cores_used is None
+    assert obs.mem_peak_bytes is None
+    assert obs.gpu_hbm_percent is None

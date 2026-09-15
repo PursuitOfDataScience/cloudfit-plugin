@@ -214,6 +214,14 @@ def measure(job_id: str, runner: Runner | None = None, *, allow_srun: bool = Tru
     if doc.get("mock"):
         out.warnings.append("this is slurmwatch --demo output: simulated, not a measurement")
 
+    # With no Slurm reachable, slurmwatch emits a flat facts-only object instead of
+    # the nested telemetry one. Report its reason rather than an all-null observation.
+    if doc.get("telemetry_available") is False or "cpu" not in doc:
+        reason = doc.get("reason") or doc.get("telemetry_unavailable_reason") or "no reason given"
+        out.warnings.append(f"no telemetry: {reason}")
+        out.raw = doc
+        return out
+
     gpus_missing = not doc.get("gpus") and int(doc.get("gpu_count_requested") or 0) > 0
     if gpus_missing and allow_srun:
         # GPU fields only populate on the compute node; slurmwatch relocates itself,
