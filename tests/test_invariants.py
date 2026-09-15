@@ -180,3 +180,10 @@ def test_the_readme_install_uses_the_claude_code_path():
     assert "claude plugin marketplace add PursuitOfDataScience/cloudfit-plugin" in readme
     assert "claude plugin install cloudfit@cloudfit-plugin" in readme
     assert "git clone" not in readme
+
+
+def test_the_tools_cloudfit_stands_on_are_credited():
+    readme = (ROOT / "README.md").read_text()
+    for tool in ("slurmwatch", "slurmpast"):
+        assert f"https://github.com/PursuitOfDataScience/{tool}" in readme, tool
+        assert f"https://pypi.org/project/{tool}/" in readme, tool

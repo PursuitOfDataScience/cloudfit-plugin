@@ -22,11 +22,20 @@ CPU and RAM get over-requested; the GPU gets under-driven. Opposite corrections,
 
 One run is a guess and says so; four agreeing within 10% is a recommendation.
 
+cloudfit measures nothing itself — it is the decision layer over two tools that do, both MIT
+and by the same author:
+
+| tool | what it gives cloudfit | |
+| --- | --- | --- |
+| `slurmwatch` | live CPU / RAM / GPU telemetry from cgroups, `/proc`, `nvidia-smi` — no accounting needed | [GitHub](https://github.com/PursuitOfDataScience/slurmwatch) · [PyPI](https://pypi.org/project/slurmwatch/) |
+| `slurmpast` | finished-job history and per-workload sizing advice — needs `slurmdbd` | [GitHub](https://github.com/PursuitOfDataScience/slurmpast) · [PyPI](https://pypi.org/project/slurmpast/) |
+
 > **Not this:** SkyPilot picks *where* to run. cloudfit answers the question underneath.
 
 ## Install
 
 ```bash
+pip install slurmwatch slurmpast        # the tools that do the measuring
 claude plugin marketplace add PursuitOfDataScience/cloudfit-plugin
 claude plugin install cloudfit@cloudfit-plugin
 ```
@@ -55,5 +64,5 @@ Not built yet: `apply`, `bootstrap`, `launch`, `provision`, `teardown`, `sweep`,
 ruff check . && python -m pytest -q && claude plugin validate . --strict
 ```
 
-168 tests, no cluster or cloud needed. In `fixtures/`, `_real` was captured from a live
+169 tests, no cluster or cloud needed. In `fixtures/`, `_real` was captured from a live
 command and `_synthetic` was built from the real schema — never blurred.

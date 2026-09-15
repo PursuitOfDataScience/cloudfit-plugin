@@ -6,6 +6,10 @@ version = "0.1.0"
 description = "Fit a Slurm job to what it actually used."
 requires-python = ">=3.10"
 dependencies = ["mcp>=1.28"]
+# Not Python imports -- cloudfit shells out to these, so they are external tools:
+#   slurmwatch  live telemetry      pypi.org/project/slurmwatch
+#   slurmpast   finished-job history  pypi.org/project/slurmpast
+license = "MIT"
 
 [tool.ruff]
 line-length = 100
