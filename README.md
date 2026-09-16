@@ -15,9 +15,10 @@ cloudfit cuts the over-ask and fills the card, in one pass.**
  GPU HBM      80G ██████████  32G ████      72G  █████████  ↑ raise batch / seq / KV
 ```
 
-🔁 Three over-asks and one idle card, corrected in one pass: never below a measured peak,
-never above a live partition limit, never at `n=0`. One run is a guess and says so; four
-agreeing within 10% is a recommendation.
+🔁 Three over-asks and one idle card, corrected in one pass. It will never tell you to ask
+for less than the job actually used, never more than your partition allows, and never
+anything at all off zero runs. From one run it says "this is a guess". From four that agree,
+it calls it a recommendation.
 
 ## 🚀 Setup
 
@@ -41,28 +42,25 @@ No `pip install` step. The server installs what it needs, into its own venv, on 
 
 | tool | what it does |
 | --- | --- |
-| 🗺️ `site` | what **this** cluster calls things, and where to correct it |
-| 🔍 `capabilities` | which telemetry sources exist here, and how to fix the gaps |
-| 📟 `measure` | the four axes right now (hops to the node for GPU numbers) |
-| 📜 `history` | `slurmpast` → `sacct` → its own record, saying which answered |
-| 🎯 `fit` | corrected `#SBATCH` block, per-axis reasoning, confidence with its `n` |
-| 🚦 `check` | pre-submit lint against the live partition |
-| 📮 `submit` | keeps CPU jobs off GPU nodes, then verifies placement |
-| ☁️ `doctor` | read-only GCP readiness, each gap with the command that fixes it |
+| 🗺️ `site` | what your cluster calls its partitions and accounts |
+| 🔍 `capabilities` | what can be measured here, and what is missing |
+| 📟 `measure` | cores, RAM, GPU and time for a job running right now |
+| 📜 `history` | what this job used the last times you ran it |
+| 🎯 `fit` | the corrected `#SBATCH` block, with the reason for every line |
+| 🚦 `check` | what the scheduler will reject, before you submit |
+| 📮 `submit` | submits it, and keeps CPU jobs off GPU nodes |
+| ☁️ `doctor` | whether your GCP project is ready, and the fix for each gap |
 
 A `PreToolUse` hook runs the same checks on `sbatch` and `gcloud` commands you type yourself.
 
-## 🧭 Any cluster, no config
+## 🧭 It works on your cluster, not mine
 
-cloudfit ships **zero** partition or account names. It reads the default partition from the
-one `sinfo` marks `*`, and your accounts from `sacctmgr`. When your site has opinions:
+No partition names, no account names, no config file. cloudfit asks your cluster what it
+uses and goes from there.
 
-```
-site(default_partition="bigmem", discouraged_partitions=["gpu-preempt"], save=True)
-```
+Guessed wrong? Say so in plain English and it remembers:
 
-Env vars work too: `CLOUDFIT_DEFAULT_PARTITION`, `CLOUDFIT_DEFAULT_ACCOUNT`,
-`CLOUDFIT_DISCOURAGED_PARTITIONS`. Precedence: cluster → saved profile → env → this call.
+> *"default to the bigmem partition, and never send anything to gpu-preempt"*
 
 ## ⚠️ Gotchas
 

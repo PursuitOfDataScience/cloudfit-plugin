@@ -9,6 +9,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+### Changed
+
+- The README says what the reader gets, not how it is built. The cluster section listed three
+  env var names and a four-step precedence chain, which is design documentation and belongs
+  in the skill; it now says there is nothing to configure and shows the sentence you type
+  when it guesses wrong. The tool table said "the four axes", "telemetry sources" and
+  "slurmpast to sacct to its own record", and now says what each tool answers. The line under
+  the chart no longer leans on `n=0`.
+
 ## [0.2.2] - 2026-09-16
 
 ### Changed
