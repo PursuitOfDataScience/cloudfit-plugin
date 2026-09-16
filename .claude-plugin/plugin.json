@@ -5,7 +5,7 @@
   "description": "Fits Slurm jobs to what they actually used: trims the CPU and RAM you over-asked for, drives the GPU you under-used, and states the sample size behind every number.",
   "author": {
     "name": "Youzhi Yu",
-    "email": "youzhi@uchicago.edu"
+    "email": "yuyouzhi666@icloud.com"
   },
   "skills": [
     "./skills/cloudfit"

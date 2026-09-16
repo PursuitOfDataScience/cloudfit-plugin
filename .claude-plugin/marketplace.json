@@ -3,7 +3,7 @@
   "name": "cloudfit-plugin",
   "owner": {
     "name": "Youzhi Yu",
-    "email": "youzhi@uchicago.edu"
+    "email": "yuyouzhi666@icloud.com"
   },
   "metadata": {
     "description": "Fits Slurm jobs to what they actually used \u2014 trims over-asked CPU and RAM, drives an under-used GPU up."
