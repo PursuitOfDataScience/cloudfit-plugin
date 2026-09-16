@@ -9,5 +9,9 @@ Fit `$ARGUMENTS` with the `cloudfit` MCP tools.
 - A path: `fit` it from its past runs, then `check` it.
 - Neither: run `capabilities` and say which telemetry sources this machine has.
 
+If a refusal turns on a partition or account name, run `site` — it reports what this cluster
+actually calls things. Correct it there (`site(default_partition=..., account=..., save=True)`)
+rather than editing a number to get past the guard.
+
 Report the corrected `#SBATCH` block, the reason per axis, and the confidence with its `n`.
 If `fit` refuses, relay the refusal as-is — do not supply a number of your own.

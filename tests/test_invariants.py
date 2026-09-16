@@ -233,3 +233,23 @@ def test_the_tools_cloudfit_stands_on_are_credited():
     for tool in ("slurmwatch", "slurmpast"):
         assert f"https://github.com/PursuitOfDataScience/{tool}" in readme, tool
         assert f"https://pypi.org/project/{tool}/" in readme, tool
+
+
+SITE_NAMES = ("rcc-staff", "caslake", "midway3", "beagle3", "amd", "pi-example", "alice")
+
+
+def test_no_cluster_name_is_baked_into_the_package():
+    """The bug this guards: one site's partition and account shipped as everyone's default."""
+    for path in MODULES:
+        text = path.read_text().lower()
+        for name in SITE_NAMES:
+            assert name not in text, f"{path.name} names {name!r}"
+
+
+def test_the_site_specific_knobs_all_arrive_as_data():
+    """guard decides; it never looks anything up. Site names reach it via SiteFacts."""
+    from cloudfit.collect import SITE_FIELDS, SiteFacts
+
+    assert set(SITE_FIELDS) <= set(SiteFacts().as_dict())
+    text = (PACKAGE / "guard.py").read_text()
+    assert "os.environ" not in text

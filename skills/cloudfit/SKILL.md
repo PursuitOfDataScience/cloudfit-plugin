@@ -7,6 +7,13 @@ description: Rules for sizing Slurm jobs from measured telemetry - cutting over-
 
 The `cloudfit` MCP tools enforce all of this. These are the rules, not the enforcement.
 
+## Learn the cluster before judging a script
+- cloudfit knows no partition or account names. `site` reports what this one uses: the default
+  partition `sinfo` marks with `*`, every partition, and the user's associations.
+- Wrong or missing? Correct it in place — `site(default_partition=…, account=…,
+  discouraged_partitions=[…])`, plus `save=True` to pin it for later sessions and the hook.
+  Never work around a guard by editing the number it complained about.
+
 ## Fit both directions in one pass
 - Cut `--cpus-per-task` to `ceil(1.3 x peak effective cores)`.
 - Cut `--mem` to `ceil(1.4 x peak)`. Never pad to a round number.
@@ -34,8 +41,13 @@ The `cloudfit` MCP tools enforce all of this. These are the rules, not the enfor
 ## Never emit something the scheduler rejects
 - Never recommend below an observed peak.
 - Never exceed the live partition limits — read them, do not assume them.
-- `--partition=amd --account=rcc-staff` is the default. A missing `--account` fails with
-  "Account is not specified", which names no cause: refuse before submitting.
+- Never assume a partition or account name — they are site-specific, and a script checked
+  against a partition that does not exist here gets refused for nothing. Read the cluster's
+  own default from `sinfo` (the one marked `*`), or the site's `CLOUDFIT_DEFAULT_PARTITION` /
+  `CLOUDFIT_DEFAULT_ACCOUNT` / `CLOUDFIT_DISCOURAGED_PARTITIONS`.
+- A missing `--account` is usually fine: Slurm fills it from the user's default association.
+  Refuse only when `sacctmgr` answers that they have none — that is when submission fails
+  with "Account is not specified", which names no cause.
 - A job with no `--gres` must not land on a GPU node. Generate `--exclude` at submit time from
   the live partition, then verify placement — an empty `--exclude` is silently a no-op.
 - Every VM gets `--max-run-duration`.

@@ -13,8 +13,8 @@ from cloudfit.hook import evaluate_command, main
 
 CLEAN = """#!/bin/bash
 #SBATCH --job-name=fit-me
-#SBATCH --partition=amd
-#SBATCH --account=rcc-staff
+#SBATCH --partition=compute
+#SBATCH --account=pi-example
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=5G
 #SBATCH --time=00:10:00
@@ -22,18 +22,21 @@ python run.py
 """
 
 
-def amd_runner() -> FakeRunner:
+def compute_runner(default_account: str = "pi-example") -> FakeRunner:
     return (
         FakeRunner()
-        .on("scontrol", "show", "partition", "amd",
-            stdout=load_text("scontrol_partition_amd_real.txt"))
-        .on("sinfo", "-p", "amd", "%n %c %m", stdout=load_text("sinfo_amd_sizes_real.txt"))
-        .on("sinfo", "-p", "amd", "%N %G", stdout=load_text("sinfo_amd_nodes_real.txt"))
+        .on("sinfo", "-h", "-o", "%P", stdout="debug compute* gpu\n")
+        .on("sacctmgr", "DefaultAccount", stdout=f"{default_account}\n")
+        .on("scontrol", "show", "partition", "compute",
+            stdout=load_text("scontrol_partition_compute_real.txt"))
+        .on("sinfo", "-p", "compute", "%n %c %m", stdout=load_text("sinfo_compute_sizes_real.txt"))
+        .on("sinfo", "-p", "compute", "%N %G", stdout=load_text("sinfo_compute_nodes_real.txt"))
     )
 
 
-def evaluate(command: str, script: str = CLEAN):
-    return evaluate_command(command, runner=amd_runner(), read_text=lambda _: script)
+def evaluate(command: str, script: str = CLEAN, runner: FakeRunner | None = None):
+    return evaluate_command(command, runner=runner or compute_runner(),
+                            read_text=lambda _: script)
 
 
 def verdict(result) -> str | None:
@@ -49,8 +52,11 @@ def test_a_clean_submission_is_not_interfered_with():
     assert evaluate("sbatch job.sbatch") is None
 
 
-def test_a_missing_account_is_denied_with_the_reason():
-    result = evaluate("sbatch job.sbatch", CLEAN.replace("#SBATCH --account=rcc-staff\n", ""))
+def test_a_missing_account_is_denied_only_where_the_cluster_has_none_to_use():
+    without = CLEAN.replace("#SBATCH --account=pi-example\n", "")
+    # This user has a default association, so sbatch would have taken the script.
+    assert evaluate("sbatch job.sbatch", without) is None
+    result = evaluate("sbatch job.sbatch", without, runner=compute_runner(default_account=""))
     assert verdict(result) == "deny"
     reason = result["hookSpecificOutput"]["permissionDecisionReason"]
     assert "cloudfit refuses job.sbatch" in reason
@@ -64,13 +70,16 @@ def test_policy_gaps_ask_rather_than_deny():
 
 
 def test_the_hook_and_the_tool_cannot_disagree():
+    from cloudfit.collect import site_facts
     from cloudfit.guard import check_script, parse_script
 
-    without = CLEAN.replace("#SBATCH --account=rcc-staff\n", "")
-    facts = partition_facts("amd", amd_runner())
-    refusals = check_script(without, facts).refusals
-    reason = evaluate("sbatch job.sbatch", without)["hookSpecificOutput"]["permissionDecisionReason"]
-    assert all(r in reason for r in refusals)
+    without = CLEAN.replace("#SBATCH --account=pi-example\n", "")
+    runner = compute_runner(default_account="")
+    facts = partition_facts("compute", runner)
+    refusals = check_script(without, facts, site_facts(runner)).refusals
+    hook = evaluate("sbatch job.sbatch", without, runner=compute_runner(default_account=""))
+    reason = hook["hookSpecificOutput"]["permissionDecisionReason"]
+    assert refusals and all(r in reason for r in refusals)
     assert parse_script(without).account is None
 
 
@@ -85,7 +94,7 @@ def test_a_launch_with_a_deadline_passes():
 
 
 def test_an_unreadable_script_is_left_to_sbatch():
-    assert evaluate_command("sbatch missing.sbatch", runner=amd_runner()) is None
+    assert evaluate_command("sbatch missing.sbatch", runner=compute_runner()) is None
 
 
 def test_unbalanced_quotes_are_not_our_problem():
@@ -118,8 +127,9 @@ def test_the_hook_exits_zero_for_a_clean_command_in_a_real_process(tmp_path):
 
 
 def test_the_hook_denies_a_real_bad_script_end_to_end(tmp_path):
+    """Refused for a reason that holds on any cluster, including none at all."""
     script = tmp_path / "bad.sbatch"
-    script.write_text("#!/bin/bash\n#SBATCH --partition=amd\n#SBATCH --mem=8G\n")
+    script.write_text("#!/bin/bash\npython train.py\n")
     payload = {"tool_name": "Bash", "tool_input": {"command": f"sbatch {script}"}}
     proc = subprocess.run(
         [sys.executable, str(ROOT / "cloudfit" / "hook.py")],
@@ -127,7 +137,7 @@ def test_the_hook_denies_a_real_bad_script_end_to_end(tmp_path):
     assert proc.returncode == 0
     emitted = json.loads(proc.stdout)
     assert emitted["hookSpecificOutput"]["permissionDecision"] == "deny"
-    assert "no --account" in emitted["hookSpecificOutput"]["permissionDecisionReason"]
+    assert "no #SBATCH directives" in emitted["hookSpecificOutput"]["permissionDecisionReason"]
 
 
 def test_hook_py_is_runnable_as_a_script():

@@ -163,7 +163,7 @@ def test_a_busy_card_is_left_alone(gpu_hbm91):
 
 
 def test_gpus_requested_with_no_telemetry_is_unknown(cpu_overask_real):
-    request = parse_script("#SBATCH --gres=gpu:2\n#SBATCH --account=rcc-staff\n")
+    request = parse_script("#SBATCH --gres=gpu:2\n#SBATCH --account=pi-example\n")
     gpu = axis(fit([observation_from_slurmwatch(cpu_overask_real)], request=request), "gpu_memory")
     assert gpu.direction == "unknown"
     assert "unknown, not zero" in gpu.reason
@@ -221,13 +221,13 @@ def test_sacct_core_averages_are_labelled_and_never_high_confidence():
 # ----------------------------------------------------------------- guardrails
 
 
-def test_nothing_is_recommended_above_a_partition_limit(amd_facts):
+def test_nothing_is_recommended_above_a_partition_limit(compute_facts):
     from cloudfit.guard import partition_ceilings
 
     obs = [Observation(source="record", kind="final", cores_used=140.0,
                        mem_peak_bytes=300 * GIB, mem_cache_measured=False,
                        elapsed_seconds=600, cores_allocated=192)]
-    ceilings = partition_ceilings(amd_facts)
+    ceilings = partition_ceilings(compute_facts)
     result = fit(obs, ceilings=ceilings)
     assert axis(result, "cores").recommended == "128"
     assert "clamped" in axis(result, "cores").reason
@@ -240,8 +240,15 @@ def test_the_block_only_carries_flags_a_fit_changed():
     assert lines == ["#SBATCH --cpus-per-task=16", "#SBATCH --mem=14G", "#SBATCH --time=01:02:00"]
 
 
-def test_the_block_supplies_the_account_a_script_forgot():
-    request = parse_script("#!/bin/bash\n#SBATCH --partition=amd\n#SBATCH --mem=96G\n")
-    result = fit(record("record_four_runs_agreeing_synthetic"), request=request)
-    assert "#SBATCH --account=rcc-staff" in result.sbatch_block
-    assert any("no --account" in n for n in result.notes)
+def test_the_block_supplies_an_account_only_when_the_site_named_one():
+    request = parse_script("#!/bin/bash\n#SBATCH --partition=compute\n#SBATCH --mem=96G\n")
+    runs = record("record_four_runs_agreeing_synthetic")
+
+    told = fit(runs, request=request, account="pi-example")
+    assert "#SBATCH --account=pi-example" in told.sbatch_block
+    assert any("no --account" in n for n in told.notes)
+
+    # Told nothing, cloudfit invents nothing: no account line, and it says why.
+    silent = fit(runs, request=request)
+    assert "--account" not in silent.sbatch_block
+    assert any("default association" in n for n in silent.notes)

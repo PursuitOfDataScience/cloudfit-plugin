@@ -1,7 +1,7 @@
 {
   "_fixture": "real",
   "_captured": "2026-09-15",
-  "_project": "sage-rcc-8dbf5f",
+  "_project": "example-project-9f2c",
   "_note": "Trimmed to the entries doctor reads. GPUS-ALL-REGIONS-per-project has an empty dimensionsInfos[].details in `quotas info list` even though the limit is a hard 0 -- so the limit is read from `project-info describe`, and `quotas info list` is used only for quotaIncreaseEligibility.",
   "services_list": [
     {
@@ -20,8 +20,8 @@
           ]
         }
       },
-      "name": "projects/48371073389/services/batch.googleapis.com",
-      "parent": "projects/48371073389",
+      "name": "projects/100000000000/services/batch.googleapis.com",
+      "parent": "projects/100000000000",
       "state": "ENABLED"
     },
     {
@@ -75,8 +75,8 @@
           ]
         }
       },
-      "name": "projects/48371073389/services/billingbudgets.googleapis.com",
-      "parent": "projects/48371073389",
+      "name": "projects/100000000000/services/billingbudgets.googleapis.com",
+      "parent": "projects/100000000000",
       "state": "ENABLED"
     },
     {
@@ -911,8 +911,8 @@
           ]
         }
       },
-      "name": "projects/48371073389/services/compute.googleapis.com",
-      "parent": "projects/48371073389",
+      "name": "projects/100000000000/services/compute.googleapis.com",
+      "parent": "projects/100000000000",
       "state": "ENABLED"
     },
     {
@@ -1056,8 +1056,8 @@
           ]
         }
       },
-      "name": "projects/48371073389/services/iam.googleapis.com",
-      "parent": "projects/48371073389",
+      "name": "projects/100000000000/services/iam.googleapis.com",
+      "parent": "projects/100000000000",
       "state": "ENABLED"
     },
     {
@@ -1108,8 +1108,8 @@
           ]
         }
       },
-      "name": "projects/48371073389/services/logging.googleapis.com",
-      "parent": "projects/48371073389",
+      "name": "projects/100000000000/services/logging.googleapis.com",
+      "parent": "projects/100000000000",
       "state": "ENABLED"
     },
     {
@@ -1357,8 +1357,8 @@
           ]
         }
       },
-      "name": "projects/48371073389/services/monitoring.googleapis.com",
-      "parent": "projects/48371073389",
+      "name": "projects/100000000000/services/monitoring.googleapis.com",
+      "parent": "projects/100000000000",
       "state": "ENABLED"
     },
     {
@@ -1699,14 +1699,14 @@
           ]
         }
       },
-      "name": "projects/48371073389/services/storage.googleapis.com",
-      "parent": "projects/48371073389",
+      "name": "projects/100000000000/services/storage.googleapis.com",
+      "parent": "projects/100000000000",
       "state": "ENABLED"
     }
   ],
   "project_info_describe": {
-    "name": "sage-rcc-8dbf5f",
-    "defaultServiceAccount": "48371073389-compute@developer.gserviceaccount.com",
+    "name": "example-project-9f2c",
+    "defaultServiceAccount": "100000000000-compute@developer.gserviceaccount.com",
     "defaultNetworkTier": "PREMIUM",
     "creationTimestamp": "2026-09-15T09:07:34.764-07:00",
     "quotas": [
@@ -1749,9 +1749,9 @@
         "enable": false
       },
       "name": "default-allow-icmp",
-      "network": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/networks/default",
+      "network": "https://www.googleapis.com/compute/v1/projects/example-project-9f2c/global/networks/default",
       "priority": 65534,
-      "selfLink": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/firewalls/default-allow-icmp",
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/example-project-9f2c/global/firewalls/default-allow-icmp",
       "sourceRanges": [
         "0.0.0.0/0"
       ]
@@ -1784,9 +1784,9 @@
         "enable": false
       },
       "name": "default-allow-internal",
-      "network": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/networks/default",
+      "network": "https://www.googleapis.com/compute/v1/projects/example-project-9f2c/global/networks/default",
       "priority": 65534,
-      "selfLink": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/firewalls/default-allow-internal",
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/example-project-9f2c/global/firewalls/default-allow-internal",
       "sourceRanges": [
         "10.128.0.0/9"
       ]
@@ -1810,9 +1810,9 @@
         "enable": false
       },
       "name": "default-allow-rdp",
-      "network": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/networks/default",
+      "network": "https://www.googleapis.com/compute/v1/projects/example-project-9f2c/global/networks/default",
       "priority": 65534,
-      "selfLink": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/firewalls/default-allow-rdp",
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/example-project-9f2c/global/firewalls/default-allow-rdp",
       "sourceRanges": [
         "0.0.0.0/0"
       ]
@@ -1836,9 +1836,9 @@
         "enable": false
       },
       "name": "default-allow-ssh",
-      "network": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/networks/default",
+      "network": "https://www.googleapis.com/compute/v1/projects/example-project-9f2c/global/networks/default",
       "priority": 65534,
-      "selfLink": "https://www.googleapis.com/compute/v1/projects/sage-rcc-8dbf5f/global/firewalls/default-allow-ssh",
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/example-project-9f2c/global/firewalls/default-allow-ssh",
       "sourceRanges": [
         "0.0.0.0/0"
       ]
@@ -1861,7 +1861,7 @@
       "metric": "compute.googleapis.com/cpus_all_regions",
       "metricDisplayName": "CPUs (all regions)",
       "metricUnit": "1",
-      "name": "projects/48371073389/locations/global/services/compute.googleapis.com/quotaInfos/CPUS-ALL-REGIONS-per-project",
+      "name": "projects/100000000000/locations/global/services/compute.googleapis.com/quotaInfos/CPUS-ALL-REGIONS-per-project",
       "quotaDisplayName": "CPUs (all regions)",
       "quotaId": "CPUS-ALL-REGIONS-per-project",
       "quotaIncreaseEligibility": {
@@ -1883,7 +1883,7 @@
       "metric": "compute.googleapis.com/gpus_all_regions",
       "metricDisplayName": "GPUs (all regions)",
       "metricUnit": "1",
-      "name": "projects/48371073389/locations/global/services/compute.googleapis.com/quotaInfos/GPUS-ALL-REGIONS-per-project",
+      "name": "projects/100000000000/locations/global/services/compute.googleapis.com/quotaInfos/GPUS-ALL-REGIONS-per-project",
       "quotaDisplayName": "GPUs (all regions)",
       "quotaId": "GPUS-ALL-REGIONS-per-project",
       "quotaIncreaseEligibility": {
@@ -1893,17 +1893,17 @@
     }
   ],
   "iam_policy": {
-    "_trimmed": "only the bindings naming 48371073389-compute@developer.gserviceaccount.com; the rest of the policy names real people",
+    "_trimmed": "only the bindings naming 100000000000-compute@developer.gserviceaccount.com; the rest of the policy names real people",
     "bindings": [
       {
         "members": [
-          "serviceAccount:48371073389-compute@developer.gserviceaccount.com"
+          "serviceAccount:100000000000-compute@developer.gserviceaccount.com"
         ],
         "role": "roles/batch.agentReporter"
       },
       {
         "members": [
-          "serviceAccount:48371073389-compute@developer.gserviceaccount.com"
+          "serviceAccount:100000000000-compute@developer.gserviceaccount.com"
         ],
         "role": "roles/logging.logWriter"
       }

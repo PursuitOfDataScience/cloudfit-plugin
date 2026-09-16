@@ -9,6 +9,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-16
+
+### Changed
+
+- **cloudfit no longer ships any cluster's names.** `guard.DEFAULT_PARTITION` and
+  `guard.DEFAULT_ACCOUNT` held one site's partition and account, applied to everyone: on any
+  other cluster `check` substituted a partition that does not exist there, refused the script
+  for it, and told the user to add an account they have never heard of. Both constants are
+  gone. Everything site-specific now arrives as `SiteFacts`, discovered per cluster —
+  the default partition is the one `sinfo` marks `*`, the accounts are whatever `sacctmgr`
+  says this user is associated with.
+- A missing `--account` is no longer refused on sight. Most clusters fill it from the user's
+  default association, so the old rule rejected scripts `sbatch` would have accepted
+  (reproduced on Slurm 22.05, `ClusterName=lab`). It now refuses only when the lookup
+  succeeded and came back empty — the one case that really does fail with "Account is not
+  specified" — and names `sacctmgr` rather than an account of its own.
+- `policy_warnings` no longer knows which partitions bill. A site says so with
+  `CLOUDFIT_DISCOURAGED_PARTITIONS`; unset means cloudfit has no opinion.
+- Host, user and account names are scrubbed from every fixture, including a GCP project id
+  and its default service-account address in `gcloud_doctor_real.json`. Shapes are real,
+  identities are not; the `_real` captures say so in their header line.
+- The README is shorter and leads with the correction it makes, rather than with the
+  repo's own test count and fixture-naming convention.
+
+### Added
+
+- `site`, the eighth MCP tool: reports what this cluster calls things, and takes
+  `default_partition` / `account` / `discouraged_partitions` to correct it mid-session.
+  `save=True` writes `<CLOUDFIT_HOME>/site.json` so later sessions and the submit hook start
+  from it. Precedence: cluster discovery → saved profile → `CLOUDFIT_*` env → this call.
+- `test_no_cluster_name_is_baked_into_the_package`, which fails if any partition or account
+  name reappears in `cloudfit/`.
+- Tests for site discovery, the precedence order, and a cluster that answers nothing.
+
 ## [0.1.2] - 2026-09-16
 
 ### Fixed
@@ -49,7 +83,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - Pin `mcp>=1.28,<2`. `mcp` 2.x renamed `FastMCP` to `MCPServer`, so `cloudfit/server.py`
   raised `ModuleNotFoundError` at import and the only thing Claude Code reported was
   `cloudfit (CONNECTION_CLOSED): "Connection closed"` — with no indication the cause was a
-  resolved dependency. Reproduced on a Debian 12 host where pip resolved `mcp` 2.x; midway3
+  resolved dependency. Reproduced on a Debian 12 host where pip resolved `mcp` 2.x; the cluster
   was unaffected only because its env happens to hold 1.28.1.
 
 - Declare the MCP server inline in `plugin.json` and delete `.mcp.json`. That file had two
@@ -70,11 +104,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Known
 
-- `guard.DEFAULT_PARTITION = "amd"` and `guard.DEFAULT_ACCOUNT = "rcc-staff"` are RCC site
-  policy applied unconditionally. On any other cluster `check` substitutes `amd`, finds it
-  absent, and refuses a script the scheduler would have accepted — as does the unconditional
-  `--account` refusal. Verified against a Slurm 22.05 single-node cluster reporting
-  `ClusterName=lab`, where `sbatch` accepted the same script `check` rejected.
+- (Fixed in 0.2.0.) `guard.DEFAULT_PARTITION` and `guard.DEFAULT_ACCOUNT` were one site's
+  policy applied unconditionally, so on any other cluster `check` refused a script the
+  scheduler would have accepted.
 - `capabilities()` reads `AccountingStorageType` from `scontrol` and reports `sacct` as
   available on that basis, without running it. On the same 22.05 cluster it reported
   `remedy: null` while `history()` hit `sacct failed (rc=1) Slurm accounting storage is
@@ -85,6 +117,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 Initial release: `capabilities`, `measure`, `history`, `fit`, `check`, `submit`, `doctor`,
 the `PreToolUse` guard on `sbatch` and `gcloud`, and the `cloudfit` skill and agent.
 
-[Unreleased]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.1.2...v0.2.0
+[0.1.2]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/PursuitOfDataScience/cloudfit-plugin/releases/tag/v0.1.0

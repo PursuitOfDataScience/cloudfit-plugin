@@ -17,8 +17,16 @@ from dataclasses import asdict, dataclass, field
 
 from . import GIB, Observation, fmt_gib, fmt_slurm_time, parse_slurm_mem, parse_slurm_time
 
-DEFAULT_PARTITION = "amd"
-DEFAULT_ACCOUNT = "rcc-staff"
+# No partition, account or "billed partition" name is baked in. Those are site
+# policy, and a plugin that ships one cluster's names checks every other
+# cluster's scripts against limits that belong to nothing. Everything
+# site-specific arrives as `SiteFacts` — read from the cluster itself, or from
+# these env vars when a site wants to state it. This module stays pure: it
+# never reads the environment, so the same inputs always give the same verdict.
+ENV_DEFAULT_PARTITION = "CLOUDFIT_DEFAULT_PARTITION"
+ENV_DEFAULT_ACCOUNT = "CLOUDFIT_DEFAULT_ACCOUNT"
+ENV_DISCOURAGED_PARTITIONS = "CLOUDFIT_DISCOURAGED_PARTITIONS"
+
 
 _FLAG_ALIASES = {
     "-p": "--partition",
@@ -228,12 +236,28 @@ def exceeds_partition_limit(request: SbatchRequest, facts) -> list[str]:
     return reasons
 
 
-def missing_account(request: SbatchRequest) -> str | None:
+def missing_account(request: SbatchRequest, site=None) -> str | None:
+    """Refuse only where the cluster has actually said this script cannot run.
+
+    Most clusters fill a missing `--account` from the user's default
+    association, so a blanket refusal here rejects scripts `sbatch` would have
+    taken. It is a real failure only when the lookup succeeded and came back
+    empty: then Slurm answers 'Account is not specified', which names no cause.
+    """
     if request.account:
         return None
+    if site is None or not getattr(site, "account_lookup_ok", False):
+        return None
+    if getattr(site, "user_default_account", None):
+        return None
+    suggestion = getattr(site, "suggested_account", None)
+    hint = (f"add `#SBATCH --account={suggestion}`" if suggestion
+            else "add `#SBATCH --account=<account>` — "
+                 "`sacctmgr -nP show assoc user=$USER format=account` lists yours")
     return (
-        "no --account. Slurm answers this with 'Account is not specified', which "
-        f"says nothing about the cause; add `#SBATCH --account={DEFAULT_ACCOUNT}`."
+        "no --account, and your Slurm user has no default association, so this "
+        "fails with 'Account is not specified', which says nothing about the "
+        f"cause; {hint}."
     )
 
 
@@ -315,7 +339,7 @@ def script_argument(tokens: list[str]) -> str | None:
     return None
 
 
-def policy_warnings(request: SbatchRequest) -> list[str]:
+def policy_warnings(request: SbatchRequest, facts=None, site=None) -> list[str]:
     """Local defaults, and only the actionable ones.
 
     Every warning here surfaces as a permission prompt in the hook, so "this
@@ -323,10 +347,22 @@ def policy_warnings(request: SbatchRequest) -> list[str]:
     it on every submission is pure friction.
     """
     out: list[str] = []
+    named = getattr(site, "default_partition", None) if site else None
+    discouraged = list(getattr(site, "discouraged_partitions", []) or []) if site else []
     if not request.partition:
-        out.append(f"no --partition; {DEFAULT_PARTITION} is the default here")
-    elif request.partition == "caslake":
-        out.append("--partition=caslake bills SUs and is off-limits by local policy; use amd")
+        out.append(f"no --partition; {named} is the default here" if named
+                   else "no --partition; the job lands on whatever this cluster defaults to")
+    elif request.partition in discouraged:
+        out.append(
+            f"--partition={request.partition} is discouraged by local policy "
+            f"({ENV_DISCOURAGED_PARTITIONS})"
+            + (f"; {named} is the default here" if named else "")
+        )
+    if not request.account and facts is not None and getattr(facts, "allowed_accounts", None):
+        out.append(
+            f"no --account, and partition {facts.name} only allows "
+            f"{','.join(facts.allowed_accounts)}; your default association may not be one"
+        )
     if not request.has("--time"):
         out.append("no --time; the job inherits the partition default and can squat until MaxTime")
     if not (request.has("--mem") or request.has("--mem-per-cpu")):
@@ -372,15 +408,15 @@ class CheckResult:
         return asdict(self)
 
 
-def check_script(text: str, facts=None) -> CheckResult:
-    """The pre-submit lint. Pure: partition facts come in as data."""
+def check_script(text: str, facts=None, site=None) -> CheckResult:
+    """The pre-submit lint. Pure: partition and site facts come in as data."""
     request = parse_script(text)
-    refusals = [r for r in (missing_account(request), partition_unusable(request, facts),
+    refusals = [r for r in (missing_account(request, site), partition_unusable(request, facts),
                             unguarded_gpu_nodes(request, facts)) if r]
     refusals += exceeds_partition_limit(request, facts)
     if not request.directives:
         refusals.append("no #SBATCH directives found — is this a batch script?")
-    warnings = policy_warnings(request)
+    warnings = policy_warnings(request, facts, site)
     if facts is not None and not getattr(facts, "queried", True):
         warnings.append(
             f"could not reach scontrol, so partition {facts.name}'s limits were not checked"

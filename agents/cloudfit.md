@@ -22,19 +22,21 @@ the recorded fixtures.
 - No recommendation below an observed peak, and none above a live partition limit.
 - `n=0` refuses. Confidence is always reported with its `n`.
 - `hook.py` exits 1 on error, never 2 — exit 2 blocks the tool it is watching.
-- Nothing writes to `~/.claude/` or `/project/rcc/youzhi/.claude/`. `claude plugin init` does;
-  do not run it inside this tree.
+- Nothing writes to the user's `~/.claude/`. `claude plugin init` does; do not run it here.
+- No cluster's partition or account names appear in `cloudfit/`. Site-specific values reach
+  the predicates as `SiteFacts` — discovered from `sinfo`/`sacctmgr`, or set by the site.
+  `test_no_cluster_name_is_baked_into_the_package` fails if one creeps back in.
 - `doctor` is read-only. Gaps carry a `fix_argv` for a write-side tool to run later; `doctor`
   itself never runs one.
 
 ## How to verify
 ```bash
-source /software/python-miniforge-25.3.0-el8-x86_64/bin/activate AI
 ruff check . && python -m pytest -q && claude plugin validate . --strict
 ```
 
 Fixtures are the contract. A filename says `_real` only if it was captured from a live command;
-anything constructed by hand says `_synthetic`. Never relabel one as the other.
+anything constructed by hand says `_synthetic`. Never relabel one as the other. Host, user and
+account names in the captures are scrubbed — shapes are real, identities are not.
 
 ## Out of scope
 `apply`, `bootstrap`, `launch`, `provision`, `teardown`, `sweep`, `where` — designed for, not

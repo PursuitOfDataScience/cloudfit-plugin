@@ -78,12 +78,12 @@ def test_fullest_card_drives_the_gpu_axes(gpu_pair_uneven):
 
 
 def test_gpu_nodes_are_detected_by_gres_not_by_hostname():
-    assert gpu_nodes_from_sinfo(load_text("sinfo_amd_nodes_real.txt")) == set()
+    assert gpu_nodes_from_sinfo(load_text("sinfo_compute_nodes_real.txt")) == set()
     gpu = gpu_nodes_from_sinfo(load_text("sinfo_gpu_nodes_real.txt"))
-    assert "midway3-0277" in gpu
+    assert "cn-0277" in gpu
     assert len(gpu) == 11
-    mixed = "beagle3-bigmem1 (null)\nbeagle3-0010 gpu:4\n"
-    assert gpu_nodes_from_sinfo(mixed) == {"beagle3-0010"}
+    mixed = "gn-bigmem1 (null)\ngn-0010 gpu:4\n"
+    assert gpu_nodes_from_sinfo(mixed) == {"gn-0010"}
 
 
 def test_measure_uses_the_login_snapshot_when_it_carries_gpus(gpu_hbm40):
@@ -136,15 +136,15 @@ def test_no_live_telemetry_still_yields_the_shape(cpu_overask_real):
     assert any("no live telemetry" in w for w in result.warnings)
 
 
-def test_partition_facts_read_the_live_limits(amd_facts):
-    assert amd_facts.exists
-    assert amd_facts.state == "UP"
-    assert amd_facts.max_time_seconds is None  # MaxTime=UNLIMITED
-    assert amd_facts.node_cpus_max == 128
-    assert amd_facts.total_cpus == 5120
-    assert amd_facts.gpu_nodes_known
-    assert amd_facts.gpu_nodes == []
-    assert amd_facts.default_mem_per_cpu_bytes == 1750 * 1024**2
+def test_partition_facts_read_the_live_limits(compute_facts):
+    assert compute_facts.exists
+    assert compute_facts.state == "UP"
+    assert compute_facts.max_time_seconds is None  # MaxTime=UNLIMITED
+    assert compute_facts.node_cpus_max == 128
+    assert compute_facts.total_cpus == 5120
+    assert compute_facts.gpu_nodes_known
+    assert compute_facts.gpu_nodes == []
+    assert compute_facts.default_mem_per_cpu_bytes == 1750 * 1024**2
 
 
 def test_gpu_partition_facts_list_every_gres_node(gpu_facts):
@@ -159,7 +159,7 @@ def test_absent_partition_is_reported_as_absent():
 
 
 def test_sbatch_parses_the_job_id():
-    runner = FakeRunner().on("sbatch", stdout="59400001;midway3\n")
+    runner = FakeRunner().on("sbatch", stdout="59400001;cluster0\n")
     job_id, result = sbatch(["job.sbatch"], runner)
     assert job_id == "59400001"
     assert result.ok
@@ -169,13 +169,13 @@ def test_sbatch_parses_the_job_id():
 def test_placement_reports_the_gres_of_the_node_it_landed_on():
     runner = (
         FakeRunner()
-        .on("squeue", stdout="RUNNING|(None)|beagle3-0010\n")
-        .on("scontrol", "show", "hostnames", stdout="beagle3-0010\n")
-        .on("scontrol", "show", "node", stdout="NodeName=beagle3-0010 Gres=gpu:4 CPUTot=48\n")
+        .on("squeue", stdout="RUNNING|(None)|gn-0010\n")
+        .on("scontrol", "show", "hostnames", stdout="gn-0010\n")
+        .on("scontrol", "show", "node", stdout="NodeName=gn-0010 Gres=gpu:4 CPUTot=48\n")
     )
     out = placement("59400001", runner)
-    assert out["nodes"] == ["beagle3-0010"]
-    assert out["on_gpu_node"] == ["beagle3-0010"]
+    assert out["nodes"] == ["gn-0010"]
+    assert out["on_gpu_node"] == ["gn-0010"]
     assert out["verified"]
 
 
@@ -207,3 +207,68 @@ def test_the_flat_schema_is_never_parsed_as_telemetry():
     assert obs.cores_used is None
     assert obs.mem_peak_bytes is None
     assert obs.gpu_hbm_percent is None
+
+
+# --------------------------------------------------------------- site facts
+
+
+def cluster_runner(default_account: str = "pi-smith", partitions: str = "debug normal* gpu"):
+    from cloudfit.collect import FakeRunner
+
+    return (
+        FakeRunner()
+        .on("sinfo", "-h", "-o", "%P", stdout=partitions + "\n")
+        .on("sacctmgr", "DefaultAccount", stdout=default_account + "\n")
+        .on("sacctmgr", "assoc", stdout="pi-smith\npi-jones\n")
+    )
+
+
+def test_the_default_partition_is_read_off_the_cluster_not_guessed(record_home):
+    from cloudfit.collect import site_facts
+
+    facts = site_facts(cluster_runner())
+    assert facts.default_partition == "normal"  # the one sinfo marked with *
+    assert facts.partitions == ["debug", "normal", "gpu"]
+    assert facts.user_default_account == "pi-smith"
+    assert facts.accounts == ["pi-jones", "pi-smith"]
+    assert facts.configured == {}  # discovery is not configuration
+
+
+def test_a_cluster_that_answers_nothing_leaves_every_name_unset(record_home):
+    from cloudfit.collect import FakeRunner, site_facts
+
+    facts = site_facts(FakeRunner().absent("sinfo").absent("sacctmgr"))
+    assert facts.default_partition is None
+    assert facts.suggested_account is None
+    assert facts.account_lookup_ok is False  # unreachable, not "you have no account"
+    assert facts.discouraged_partitions == []
+
+
+def test_env_overrides_the_cluster_and_the_caller_overrides_the_env(record_home, monkeypatch):
+    from cloudfit.collect import site_facts
+
+    monkeypatch.setenv("CLOUDFIT_DEFAULT_PARTITION", "bigmem")
+    monkeypatch.setenv("CLOUDFIT_DEFAULT_ACCOUNT", "pi-jones")
+    monkeypatch.setenv("CLOUDFIT_DISCOURAGED_PARTITIONS", "billed, gpu-preempt")
+
+    from_env = site_facts(cluster_runner())
+    assert from_env.default_partition == "bigmem"
+    assert from_env.suggested_account == "pi-jones"
+    assert from_env.discouraged_partitions == ["billed", "gpu-preempt"]
+    assert from_env.source["default_partition"] == "env"
+
+    on_the_fly = site_facts(cluster_runner(), {"default_partition": "gpu"})
+    assert on_the_fly.default_partition == "gpu"
+    assert on_the_fly.source["default_partition"] == "override"
+
+
+def test_a_saved_profile_survives_into_the_next_session(record_home):
+    from cloudfit.collect import load_site_profile, save_site_profile, site_facts
+
+    save_site_profile({"default_partition": "normal", "suggested_account": "pi-smith",
+                       "ignored": "not a site field"})
+    assert load_site_profile() == {"default_partition": "normal",
+                                   "suggested_account": "pi-smith"}
+    facts = site_facts(cluster_runner(partitions="debug gpu*"))
+    assert facts.default_partition == "normal"  # the profile beat the cluster's own default
+    assert facts.source["suggested_account"] == "profile"

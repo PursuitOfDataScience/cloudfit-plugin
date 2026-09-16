@@ -19,8 +19,8 @@ from cloudfit.guard import (
 
 CPU_SCRIPT = """#!/bin/bash
 #SBATCH --job-name=caai-quickstart
-#SBATCH --partition=amd
-#SBATCH --account=rcc-staff
+#SBATCH --partition=compute
+#SBATCH --account=pi-example
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=48G
 #SBATCH --time=01:00:00
@@ -30,7 +30,7 @@ python run.py
 GPU_SCRIPT = """#!/bin/bash
 #SBATCH -J train-a5
 #SBATCH -p gpu
-#SBATCH -A rcc-staff
+#SBATCH -A pi-example
 #SBATCH --gres=gpu:1
 #SBATCH -c 8
 #SBATCH --mem=64G
@@ -42,7 +42,7 @@ def test_short_flags_and_equals_forms_parse_the_same():
     request = parse_script(GPU_SCRIPT)
     assert request.job_name == "train-a5"
     assert request.partition == "gpu"
-    assert request.account == "rcc-staff"
+    assert request.account == "pi-example"
     assert request.cpus == 8
     assert request.gpus == 1
     assert request.mem_bytes == 64 * GIB
@@ -70,47 +70,71 @@ def test_every_gpu_spelling_is_counted():
     assert parse_script("#SBATCH --gres=gpu:a100:4\n").gpus == 4
 
 
-def test_a_missing_account_is_refused_with_the_cryptic_error_named():
-    assert missing_account(parse_script(CPU_SCRIPT)) is None
-    reason = missing_account(parse_script("#SBATCH -p amd\n"))
+def test_a_missing_account_is_refused_only_when_the_cluster_says_it_has_none():
+    from cloudfit.collect import SiteFacts
+
+    script = parse_script("#SBATCH -p compute\n")
+    # No lookup, or a lookup that found a default association: Slurm fills it in.
+    assert missing_account(script) is None
+    assert missing_account(script, SiteFacts()) is None
+    assert missing_account(script, SiteFacts(account_lookup_ok=True,
+                                             user_default_account="pi-example")) is None
+    # sacctmgr answered, and the answer was empty. Now it really will fail.
+    reason = missing_account(script, SiteFacts(account_lookup_ok=True))
     assert "Account is not specified" in reason
-    assert "--account=rcc-staff" in reason
+    assert "sacctmgr" in reason  # how to find yours, since cloudfit knows no account names
+    named = missing_account(script, SiteFacts(account_lookup_ok=True,
+                                              suggested_account="pi-example"))
+    assert "--account=pi-example" in named
 
 
-def test_check_refuses_a_script_with_no_account(amd_facts):
-    without = CPU_SCRIPT.replace("#SBATCH --account=rcc-staff\n", "")
-    result = check_script(without, amd_facts)
-    assert not result.ok
-    assert any("no --account" in r for r in result.refusals)
+def test_a_script_that_names_its_account_is_never_questioned():
+    from cloudfit.collect import SiteFacts
+
+    assert missing_account(parse_script(CPU_SCRIPT), SiteFacts(account_lookup_ok=True)) is None
 
 
-def test_check_passes_a_well_formed_cpu_script(amd_facts):
-    result = check_script(CPU_SCRIPT, amd_facts)
+def test_check_leaves_a_missing_account_alone_on_a_cluster_that_fills_it_in(compute_facts):
+    """The bug this replaces: every script without --account was refused, everywhere."""
+    from cloudfit.collect import SiteFacts
+
+    without = CPU_SCRIPT.replace("#SBATCH --account=pi-example\n", "")
+    assert check_script(without, compute_facts).ok
+    assert check_script(without, compute_facts,
+                        SiteFacts(account_lookup_ok=True,
+                                  user_default_account="pi-example")).ok
+    refused = check_script(without, compute_facts, SiteFacts(account_lookup_ok=True))
+    assert not refused.ok
+    assert any("no --account" in r for r in refused.refusals)
+
+
+def test_check_passes_a_well_formed_cpu_script(compute_facts):
+    result = check_script(CPU_SCRIPT, compute_facts)
     assert result.ok
     assert result.refusals == []
 
 
 def test_check_refuses_an_account_the_partition_disallows(gpu_facts):
-    gpu_facts.allowed_accounts = ["rcc-staff", "pi-other"]  # the live partition allows ALL
-    result = check_script(GPU_SCRIPT.replace("-A rcc-staff", "-A someone-else"), gpu_facts)
+    gpu_facts.allowed_accounts = ["pi-example", "pi-other"]  # the live partition allows ALL
+    result = check_script(GPU_SCRIPT.replace("-A pi-example", "-A someone-else"), gpu_facts)
     assert not result.ok
     assert any("AllowAccounts" in r for r in result.refusals)
 
 
-def test_check_refuses_a_request_no_node_can_satisfy(amd_facts):
+def test_check_refuses_a_request_no_node_can_satisfy(compute_facts):
     over = CPU_SCRIPT.replace("--cpus-per-task=4", "--cpus-per-task=256")
-    reasons = exceeds_partition_limit(parse_script(over), amd_facts)
+    reasons = exceeds_partition_limit(parse_script(over), compute_facts)
     assert any("PENDING forever" in r for r in reasons)
     fat = CPU_SCRIPT.replace("--mem=48G", "--mem=400G")
-    assert any("PENDING forever" in r for r in exceeds_partition_limit(parse_script(fat), amd_facts))
+    assert any("PENDING forever" in r for r in exceeds_partition_limit(parse_script(fat), compute_facts))
 
 
-def test_check_refuses_gpus_on_a_partition_with_none(amd_facts):
-    reasons = exceeds_partition_limit(parse_script(CPU_SCRIPT + "#SBATCH --gres=gpu:1\n"), amd_facts)
+def test_check_refuses_gpus_on_a_partition_with_none(compute_facts):
+    reasons = exceeds_partition_limit(parse_script(CPU_SCRIPT + "#SBATCH --gres=gpu:1\n"), compute_facts)
     assert reasons == []  # the directive is after a command line, so it does not count
     script = CPU_SCRIPT.replace("#SBATCH --mem=48G", "#SBATCH --gres=gpu:1")
     assert any("no node with a GRES" in r
-               for r in exceeds_partition_limit(parse_script(script), amd_facts))
+               for r in exceeds_partition_limit(parse_script(script), compute_facts))
 
 
 def test_check_refuses_a_time_over_the_partition_maxtime(gpu_facts):
@@ -121,7 +145,7 @@ def test_check_refuses_a_time_over_the_partition_maxtime(gpu_facts):
 
 
 def test_a_cpu_job_is_refused_while_gpu_nodes_are_reachable(gpu_facts):
-    cpu_on_gpu_partition = CPU_SCRIPT.replace("--partition=amd", "--partition=gpu")
+    cpu_on_gpu_partition = CPU_SCRIPT.replace("--partition=compute", "--partition=gpu")
     reason = unguarded_gpu_nodes(parse_script(cpu_on_gpu_partition), gpu_facts)
     assert "squats a card" in reason
     assert "11 node(s)" in reason
@@ -133,34 +157,57 @@ def test_a_gpu_job_is_not_asked_to_exclude_gpu_nodes(gpu_facts):
 
 def test_an_already_excluded_partition_is_satisfied(gpu_facts):
     script = CPU_SCRIPT.replace(
-        "--partition=amd",
+        "--partition=compute",
         f"--partition=gpu\n#SBATCH --exclude={','.join(gpu_facts.gpu_nodes)}")
     assert unguarded_gpu_nodes(parse_script(script), gpu_facts) is None
 
 
-def test_a_cpu_only_partition_needs_no_exclusion(amd_facts):
-    assert unguarded_gpu_nodes(parse_script(CPU_SCRIPT), amd_facts) is None
-    assert exclusion_ineffective([], amd_facts) is None
+def test_a_cpu_only_partition_needs_no_exclusion(compute_facts):
+    assert unguarded_gpu_nodes(parse_script(CPU_SCRIPT), compute_facts) is None
+    assert exclusion_ineffective([], compute_facts) is None
 
 
 def test_an_empty_exclusion_is_called_a_no_op(gpu_facts):
     assert "no-op" in exclusion_ineffective([], gpu_facts)
-    assert exclusion_ineffective(["midway3-0277"], gpu_facts) is None
+    assert exclusion_ineffective(["cn-0277"], gpu_facts) is None
 
 
 def test_landing_on_a_gpu_node_is_refused_after_the_fact():
-    placement = {"job_id": "9", "on_gpu_node": ["beagle3-0010"], "gres": {"beagle3-0010": "gpu:4"}}
+    placement = {"job_id": "9", "on_gpu_node": ["gn-0010"], "gres": {"gn-0010": "gpu:4"}}
     reason = landed_on_gpu_node(parse_script(CPU_SCRIPT), placement)
     assert "do not let it ride" in reason
     assert landed_on_gpu_node(parse_script(GPU_SCRIPT), placement) is None
 
 
 def test_policy_is_warned_about_never_refused():
-    warnings = policy_warnings(parse_script("#SBATCH -p caslake\n#SBATCH -A rcc-staff\n"))
-    assert any("caslake" in w for w in warnings)
+    from cloudfit.collect import SiteFacts
+
+    script = "#SBATCH -p billed\n#SBATCH -A pi-example\n"
+    site = SiteFacts(default_partition="compute", discouraged_partitions=["billed"])
+    warnings = policy_warnings(parse_script(script), None, site)
+    assert any("billed" in w and "discouraged" in w for w in warnings)
     assert any("no --time" in w for w in warnings)
     assert any("no --mem" in w for w in warnings)
-    assert check_script("#SBATCH -p caslake\n#SBATCH -A rcc-staff\n").ok
+    assert check_script(script, None, site).ok
+
+
+def test_no_partition_is_discouraged_until_a_site_says_so():
+    """cloudfit ships no opinion about which partitions cost money."""
+    from cloudfit.collect import SiteFacts
+
+    for site in (None, SiteFacts(), SiteFacts(default_partition="compute")):
+        warnings = policy_warnings(parse_script("#SBATCH -p billed\n"), None, site)
+        assert not any("discouraged" in w for w in warnings)
+
+
+def test_a_nameless_partition_warning_does_not_invent_a_partition():
+    from cloudfit.collect import SiteFacts
+
+    bare = policy_warnings(parse_script("#SBATCH --mem=1G\n"), None, None)
+    assert any("whatever this cluster defaults to" in w for w in bare)
+    known = policy_warnings(parse_script("#SBATCH --mem=1G\n"), None,
+                            SiteFacts(default_partition="normal"))
+    assert any("normal is the default here" in w for w in known)
 
 
 def test_a_script_with_no_directives_is_refused():
@@ -175,13 +222,13 @@ def test_a_vm_may_not_outlive_its_work():
 
 
 def test_the_script_argument_is_found_past_the_flags():
-    assert script_argument(["sbatch", "--mem=8G", "-p", "amd", "runs/job.sbatch"]) == "runs/job.sbatch"
+    assert script_argument(["sbatch", "--mem=8G", "-p", "compute", "runs/job.sbatch"]) == "runs/job.sbatch"
     assert script_argument(["/usr/bin/sbatch", "job.sh"]) == "job.sh"
     assert script_argument(["sbatch", "--wrap", "echo hi"]) is None
 
 
-def test_ceilings_and_clamping(amd_facts):
-    ceilings = partition_ceilings(amd_facts)
+def test_ceilings_and_clamping(compute_facts):
+    ceilings = partition_ceilings(compute_facts)
     assert ceilings["cores"] == 128
     assert ceilings["time_seconds"] is None
     assert clamp(200, 128) == (128, True)
@@ -201,7 +248,7 @@ def test_observed_peaks_are_the_floors():
 def test_an_unreachable_scheduler_warns_rather_than_refusing():
     from cloudfit.collect import FakeRunner, partition_facts
 
-    facts = partition_facts("amd", FakeRunner().absent("scontrol").absent("sinfo"))
+    facts = partition_facts("compute", FakeRunner().absent("scontrol").absent("sinfo"))
     assert not facts.queried
     assert not facts.exists
     result = check_script(CPU_SCRIPT, facts)

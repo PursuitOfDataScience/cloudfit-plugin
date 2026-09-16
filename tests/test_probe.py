@@ -9,7 +9,7 @@ ON = """Configuration data
 AccountingStorageType  = accounting_storage/slurmdbd
 JobAcctGatherType      = jobacct_gather/linux
 JobAcctGatherFrequency = 30
-ClusterName            = midway3
+ClusterName            = cluster0
 """
 STORAGE_OFF = ON.replace("accounting_storage/slurmdbd", "accounting_storage/none")
 GATHER_OFF = ON.replace("jobacct_gather/linux", "jobacct_gather/none")
@@ -23,7 +23,7 @@ def test_capabilities_reads_both_accounting_switches():
     caps = capabilities(FakeRunner().on("show", "config", stdout=ON), which=have_everything)
     assert caps.accounting["storage_configured"]
     assert caps.accounting["gather_configured"]
-    assert caps.cluster == "midway3"
+    assert caps.cluster == "cluster0"
     assert caps.remedy is None
     assert {s["source"] for s in caps.history_sources} == {"slurmpast", "sacct", "record"}
     assert all(s["available"] for s in caps.history_sources)
@@ -71,7 +71,7 @@ def test_slurmwatch_needs_none_of_that_infrastructure():
 
 def test_doctor_reads_the_recorded_project_without_calling_gcloud():
     replay = load_json("gcloud_doctor_real.json")
-    report = doctor(FakeRunner(), project="sage-rcc-8dbf5f", responses=replay)
+    report = doctor(FakeRunner(), project="example-project-9f2c", responses=replay)
     assert report.commands == []  # nothing was run
     by_key = {f.key: f for f in report.findings}
     assert by_key["compute.googleapis.com"].status == "ok"
@@ -135,7 +135,7 @@ def test_doctor_refuses_without_a_project():
 
 # ------------------------------------------------------- reading it vs having it
 
-OPERATOR = "    youzhi  Operator  rcc-staff \n"
+OPERATOR = "    alice  Operator  pi-example \n"
 PLAIN = "    someone  None  pi-smith \n"
 
 

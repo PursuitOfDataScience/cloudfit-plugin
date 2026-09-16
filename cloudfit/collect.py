@@ -7,7 +7,9 @@ against fixtures and the cloud half testable without a cloud.
 
 from __future__ import annotations
 
+import getpass
 import json
+import pathlib
 import shutil
 import subprocess
 from collections.abc import Callable, Sequence
@@ -290,6 +292,125 @@ class PartitionFacts:
         return asdict(self)
 
 
+@dataclass
+class SiteFacts:
+    """What this cluster calls things — asked, never assumed.
+
+    cloudfit ships no partition or account names. When a script names no
+    partition there is a right answer to substitute, and `sinfo` knows it: the
+    default partition is the one it marks with `*`. Same for the account — the
+    user's default association is what `sbatch` itself would have used. A site
+    that wants to state any of it instead sets the `CLOUDFIT_*` env vars.
+    """
+
+    default_partition: str | None = None
+    partitions: list[str] = field(default_factory=list)
+    user_default_account: str | None = None  # evidence, from sacctmgr
+    accounts: list[str] = field(default_factory=list)  # every association this user has
+    account_lookup_ok: bool = False  # False means sacctmgr was unreachable, not "no account"
+    suggested_account: str | None = None  # preference: profile, env var or caller
+    discouraged_partitions: list[str] = field(default_factory=list)
+    configured: dict = field(default_factory=dict)  # only what something actually set
+    source: dict = field(default_factory=dict)  # per key: profile | env | override
+
+    def as_dict(self) -> dict:
+        from dataclasses import asdict
+
+        return asdict(self)
+
+
+SITE_PROFILE_NAME = "site.json"
+SITE_FIELDS = ("default_partition", "suggested_account", "discouraged_partitions")
+
+
+def site_profile_path() -> pathlib.Path:
+    from .history import record_dir
+
+    return record_dir() / SITE_PROFILE_NAME
+
+
+def load_site_profile() -> dict:
+    """What a previous session learned about this cluster. Absent is normal."""
+    path = site_profile_path()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {k: v for k, v in data.items() if k in SITE_FIELDS and v}
+
+
+def save_site_profile(values: dict) -> pathlib.Path:
+    """Pin what the agent worked out, so the next session starts knowing it."""
+    path = site_profile_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    merged = load_site_profile() | {k: v for k, v in values.items() if k in SITE_FIELDS and v}
+    path.write_text(json.dumps(merged, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
+def site_facts(runner: Runner | None = None, overrides: dict | None = None) -> SiteFacts:
+    """What this cluster calls things, in precedence order.
+
+    Discovery (`sinfo`, `sacctmgr`) is the floor, so cloudfit works on a cluster
+    nobody has configured it for. On top of that, in order: the saved profile,
+    the `CLOUDFIT_*` env vars, and whatever the caller passes right now — which
+    is how an agent adapts the plugin mid-session without editing anything.
+    """
+    import os
+
+    from .guard import (
+        ENV_DEFAULT_ACCOUNT,
+        ENV_DEFAULT_PARTITION,
+        ENV_DISCOURAGED_PARTITIONS,
+    )
+
+    runner = runner or default_runner()
+    facts = SiteFacts()
+
+    listed = runner(["sinfo", "-h", "-o", "%P"])
+    if listed.ok:
+        names = listed.stdout.split()
+        facts.partitions = [n.rstrip("*") for n in names]
+        for name in names:
+            if name.endswith("*"):
+                facts.default_partition = name.rstrip("*")
+                break
+
+    user = getpass.getuser()
+    shown = runner(["sacctmgr", "-nP", "show", "user", user, "format=DefaultAccount"])
+    if shown.ok:
+        facts.account_lookup_ok = True
+        lines = [ln.strip() for ln in shown.stdout.splitlines() if ln.strip()]
+        facts.user_default_account = lines[0] if lines else None
+    assoc = runner(["sacctmgr", "-nP", "show", "assoc", f"user={user}", "format=account"])
+    if assoc.ok:
+        facts.accounts = sorted({ln.strip() for ln in assoc.stdout.splitlines() if ln.strip()})
+
+    def env_list(raw: str | None) -> list[str] | None:
+        items = [p.strip() for p in (raw or "").split(",") if p.strip()]
+        return items or None
+
+    layers = [
+        ("profile", load_site_profile()),
+        ("env", {
+            "default_partition": os.environ.get(ENV_DEFAULT_PARTITION, "").strip() or None,
+            "suggested_account": os.environ.get(ENV_DEFAULT_ACCOUNT, "").strip() or None,
+            "discouraged_partitions": env_list(os.environ.get(ENV_DISCOURAGED_PARTITIONS)),
+        }),
+        ("override", overrides or {}),
+    ]
+    for origin, layer in layers:
+        for key in SITE_FIELDS:
+            value = layer.get(key)
+            if value:
+                setattr(facts, key, value)
+                facts.source[key] = origin
+
+    # Only what something actually set — discovery is reported, not "configured".
+    facts.configured = {k: getattr(facts, k) for k in facts.source}
+    return facts
+
+
 def _unlimited(value: str | None) -> bool:
     return value is None or value.upper() in {"UNLIMITED", "NONE", "N/A", "INFINITE"}
 
@@ -358,8 +479,8 @@ def partition_facts(partition: str, runner: Runner | None = None) -> PartitionFa
 def gpu_nodes_from_sinfo(text: str) -> set[str]:
     """Nodes with a non-null GRES.
 
-    Filters on GRES, not on the hostname prefix: `beagle3-bigmem1` is `(null)`,
-    i.e. a legitimate CPU node despite the name.
+    Filters on GRES, not on the hostname prefix. Clusters routinely put a
+    CPU-only node inside a GPU-named series, so a name is not evidence.
     """
     nodes: set[str] = set()
     for line in text.splitlines():

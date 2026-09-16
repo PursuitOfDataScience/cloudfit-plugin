@@ -26,7 +26,7 @@ def fixtures() -> Path:
 
 @pytest.fixture
 def cpu_overask_real():
-    """A live midway3 job: 6 cores idle, 49 GiB asked, 175 MiB actually resident."""
+    """A live cluster0 job: 6 cores idle, 49 GiB asked, 175 MiB actually resident."""
     return load_json("slurmwatch_cpu_overask_real.json")
 
 
@@ -56,18 +56,18 @@ def gpu_pair_uneven():
 
 
 @pytest.fixture
-def amd_facts():
-    """PartitionFacts for amd, built from the recorded scontrol/sinfo output."""
+def compute_facts():
+    """PartitionFacts for compute, built from the recorded scontrol/sinfo output."""
     from cloudfit.collect import FakeRunner, partition_facts
 
     runner = (
         FakeRunner()
-        .on("scontrol", "show", "partition", "amd",
-            stdout=load_text("scontrol_partition_amd_real.txt"))
-        .on("sinfo", "-p", "amd", "%n %c %m", stdout=load_text("sinfo_amd_sizes_real.txt"))
-        .on("sinfo", "-p", "amd", "%N %G", stdout=load_text("sinfo_amd_nodes_real.txt"))
+        .on("scontrol", "show", "partition", "compute",
+            stdout=load_text("scontrol_partition_compute_real.txt"))
+        .on("sinfo", "-p", "compute", "%n %c %m", stdout=load_text("sinfo_compute_sizes_real.txt"))
+        .on("sinfo", "-p", "compute", "%N %G", stdout=load_text("sinfo_compute_nodes_real.txt"))
     )
-    return partition_facts("amd", runner)
+    return partition_facts("compute", runner)
 
 
 @pytest.fixture

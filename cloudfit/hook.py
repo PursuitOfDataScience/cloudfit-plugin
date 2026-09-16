@@ -61,10 +61,12 @@ def evaluate_command(command: str, *, runner=None,
         return None  # sbatch will report a missing script better than we can
 
     request = _guard.parse_script(text)
+    site = _site_facts(runner)
     facts = None
-    if runner is not None or request.partition:
-        facts = _partition_facts(request.partition or _guard.DEFAULT_PARTITION, runner)
-    checked = _guard.check_script(text, facts)
+    name = request.partition or site.default_partition
+    if name and (runner is not None or request.partition):
+        facts = _partition_facts(name, runner)
+    checked = _guard.check_script(text, facts, site)
 
     if checked.refusals:
         return decision("deny", _bullets(
@@ -73,6 +75,13 @@ def evaluate_command(command: str, *, runner=None,
         return decision("ask", _bullets(
             f"cloudfit has no objection to {script_path}, but:", checked.warnings))
     return None
+
+
+def _site_facts(runner) -> _collect.SiteFacts:
+    try:
+        return _collect.site_facts(runner)
+    except Exception:  # noqa: BLE001 -- the hook must never block on its own lookup
+        return _collect.SiteFacts()
 
 
 def _partition_facts(name: str, runner) -> _collect.PartitionFacts | None:

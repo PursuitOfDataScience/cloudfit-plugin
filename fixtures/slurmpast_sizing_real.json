@@ -72,7 +72,7 @@
     },
     {
       "name": "software",
-      "partition": "beagle3",
+      "partition": "gpu",
       "runs": 14,
       "advice": [
         {
@@ -139,7 +139,7 @@
       ]
     },
     {
-      "name": "amd_reserve",
+      "name": "compute_reserve",
       "partition": "test",
       "runs": 4,
       "advice": [
@@ -173,8 +173,8 @@
       ]
     },
     {
-      "name": "amd_reserve",
-      "partition": "amd",
+      "name": "compute_reserve",
+      "partition": "compute",
       "runs": 1,
       "advice": [
         {

@@ -71,7 +71,7 @@ def test_slurmpast_says_why_it_cannot_answer():
 
 def test_a_workload_slurmpast_knows_but_cannot_size_falls_through():
     runner = FakeRunner().on("slurmpast", stdout=SLURMPAST)
-    outcome = from_slurmpast("amd_reserve", runner, partition="amd")
+    outcome = from_slurmpast("compute_reserve", runner, partition="compute")
     assert isinstance(outcome, str)
     assert "none carry a usable resource reading" in outcome
 
@@ -97,7 +97,7 @@ def test_sacct_reads_gpu_count_from_alloctres():
 
 
 def test_sacct_with_accounting_off_is_reported_not_used():
-    blank = "59100001|t|amd|COMPLETED|4|16Gn|||||billing=4,cpu=4,mem=16G,node=1"
+    blank = "59100001|t|compute|COMPLETED|4|16Gn|||||billing=4,cpu=4,mem=16G,node=1"
     runner = FakeRunner().on("sacct", stdout=blank)
     outcome = from_sacct("t", runner)
     assert isinstance(outcome, str)
@@ -169,10 +169,10 @@ def test_the_chain_reports_n_zero_rather_than_pretending(record_home):
 def test_slurmpast_is_scoped_to_the_caller_not_the_cluster():
     """An Operator account can see every user; a fit must still only see its own runs."""
     runner = FakeRunner().on("slurmpast", stdout=SLURMPAST)
-    from_slurmpast("software", runner, user="youzhi")
+    from_slurmpast("software", runner, user="alice")
     argv = runner.calls[0]
     assert "-u" in argv
-    assert argv[argv.index("-u") + 1] == "youzhi"
+    assert argv[argv.index("-u") + 1] == "alice"
 
 
 def test_the_chain_passes_the_user_through_to_both_slurm_sources():

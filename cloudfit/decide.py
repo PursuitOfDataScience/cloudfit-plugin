@@ -33,7 +33,7 @@ from . import (
     spread_percent,
 )
 from . import guard as _guard
-from .guard import DEFAULT_ACCOUNT, SbatchRequest
+from .guard import SbatchRequest
 
 FINISHED_STATES = {"COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", "OUT_OF_MEMORY", "NODE_FAIL"}
 
@@ -330,11 +330,12 @@ def _walltime(observations, request, ceiling) -> tuple[Directive | None, list[st
                      observed=f"{fmt_slurm_time(peak)} longest"), warnings
 
 
-def render_block(directives: list[Directive], request: SbatchRequest | None = None) -> str:
+def render_block(directives: list[Directive], request: SbatchRequest | None = None,
+                 account: str | None = None) -> str:
     """The corrected `#SBATCH` block — only the lines a fit actually changed."""
     lines: list[str] = []
-    if request is not None and not request.account:
-        lines.append(f"#SBATCH --account={DEFAULT_ACCOUNT}")
+    if request is not None and not request.account and account:
+        lines.append(f"#SBATCH --account={account}")
     for d in directives:
         if d.flag and d.recommended and d.direction in {"down", "up", "hold"}:
             lines.append(f"#SBATCH {d.flag}={d.recommended}")
@@ -343,7 +344,8 @@ def render_block(directives: list[Directive], request: SbatchRequest | None = No
 
 def fit(observations: list[Observation], *, request: SbatchRequest | None = None,
         ceilings: dict | None = None, source: str = "unknown",
-        workload: str | None = None, notes: list[str] | None = None) -> FitResult:
+        workload: str | None = None, notes: list[str] | None = None,
+        account: str | None = None) -> FitResult:
     """Fit a workload from its observations. The whole decision, in one call."""
     ceilings = ceilings or {}
     notes = list(notes or [])
@@ -386,7 +388,10 @@ def fit(observations: list[Observation], *, request: SbatchRequest | None = None
     refusals = [r for r in refusals if r]
 
     if request is not None and not request.account:
-        notes.append(f"the script has no --account; the block adds --account={DEFAULT_ACCOUNT}")
+        notes.append(
+            f"the script has no --account; the block adds --account={account}" if account
+            else "the script has no --account, so Slurm will use your default association"
+        )
 
     return FitResult(
         workload=workload,
@@ -394,7 +399,7 @@ def fit(observations: list[Observation], *, request: SbatchRequest | None = None
         n=n_total,
         confidence=sample_confidence(n_total, overall_spread, rollup=rollup),
         directives=directives,
-        sbatch_block="" if refusals else render_block(directives, request),
+        sbatch_block="" if refusals else render_block(directives, request, account),
         warnings=warnings,
         refusals=refusals,
         notes=notes,

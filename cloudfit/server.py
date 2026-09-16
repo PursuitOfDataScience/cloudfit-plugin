@@ -27,9 +27,53 @@ def _read_script(script_path: str | None, script: str | None) -> tuple[str, str 
     return Path(script_path).read_text(encoding="utf-8"), script_path
 
 
-def _facts_for(request: _guard.SbatchRequest, runner=None) -> _collect.PartitionFacts | None:
-    name = request.partition or _guard.DEFAULT_PARTITION
+def _site_for(runner=None, overrides: dict | None = None) -> _collect.SiteFacts:
+    return _collect.site_facts(runner, overrides)
+
+
+def _facts_for(request: _guard.SbatchRequest, runner=None,
+               site: _collect.SiteFacts | None = None) -> _collect.PartitionFacts | None:
+    """Partition limits for whatever partition this script will actually use.
+
+    With no `--partition` and no cluster default to fall back on there is no
+    partition to check against — returning None says "unchecked" rather than
+    inventing a name and reporting it absent.
+    """
+    name = request.partition or (site or _site_for(runner)).default_partition
+    if not name:
+        return None
     return _collect.partition_facts(name, runner)
+
+
+@mcp.tool()
+def site(default_partition: str | None = None, account: str | None = None,
+         discouraged_partitions: list[str] | None = None, save: bool = False) -> dict:
+    """What this cluster calls things — and how to correct cloudfit when it guesses wrong.
+
+    Called with no arguments it only reports: the default partition `sinfo`
+    marks with `*`, every partition, and the accounts this user is associated
+    with. cloudfit ships no partition or account names of its own, so this is
+    the whole of what it knows about where it is running.
+
+    Pass any argument to adapt it on the spot; add `save=True` to write the
+    profile so later sessions and the submit hook start from it too.
+    """
+    overrides = {
+        "default_partition": default_partition,
+        "suggested_account": account,
+        "discouraged_partitions": discouraged_partitions,
+    }
+    overrides = {k: v for k, v in overrides.items() if v}
+    facts = _site_for(overrides=overrides)
+    out = facts.as_dict()
+    out["profile_path"] = str(_collect.site_profile_path())
+    out["saved"] = False
+    if save and overrides:
+        _collect.save_site_profile(overrides)
+        out["saved"] = True
+    elif save:
+        out["notes"] = ["nothing to save: pass a value to pin"]
+    return out
 
 
 @mcp.tool()
@@ -77,10 +121,11 @@ def fit(job_id: str | None = None, script_path: str | None = None,
     request = None
     facts = None
 
+    site = _site_for()
     if script or script_path:
         text, path = _read_script(script_path, script)
         request = _guard.parse_script(text)
-        facts = _facts_for(request)
+        facts = _facts_for(request, site=site)
         workload = _history.workload_from_script(text, path)
     else:
         workload = None
@@ -109,7 +154,8 @@ def fit(job_id: str | None = None, script_path: str | None = None,
 
     result = _decide.fit(observations, request=request,
                          ceilings=_guard.partition_ceilings(facts),
-                         source="+".join(sources) or "none", workload=workload, notes=notes)
+                         source="+".join(sources) or "none", workload=workload, notes=notes,
+                         account=site.suggested_account)
     return result.as_dict()
 
 
@@ -118,7 +164,8 @@ def check(script_path: str | None = None, script: str | None = None) -> dict:
     """Pre-submit lint against the live partition: refuses what the scheduler would."""
     text, _ = _read_script(script_path, script)
     request = _guard.parse_script(text)
-    return _guard.check_script(text, _facts_for(request)).as_dict()
+    site = _site_for()
+    return _guard.check_script(text, _facts_for(request, site=site), site).as_dict()
 
 
 @mcp.tool()
@@ -126,13 +173,14 @@ def submit(script_path: str, dry_run: bool = False) -> dict:
     """Submit a checked script, generating --exclude for GPU nodes and verifying it took."""
     text = Path(script_path).read_text(encoding="utf-8")
     request = _guard.parse_script(text)
-    facts = _facts_for(request)
-    return submit_with(text, script_path, request, facts, dry_run=dry_run)
+    site = _site_for()
+    facts = _facts_for(request, site=site)
+    return submit_with(text, script_path, request, facts, dry_run=dry_run, site=site)
 
 
 def submit_with(text: str, script_path: str, request: _guard.SbatchRequest,
                 facts: _collect.PartitionFacts | None, *, dry_run: bool = False,
-                runner=None) -> dict:
+                runner=None, site: _collect.SiteFacts | None = None) -> dict:
     """The submit path, with the backend injectable so it can run against a fake."""
     out = _collect.Submission(submitted=False)
 
@@ -145,7 +193,7 @@ def submit_with(text: str, script_path: str, request: _guard.SbatchRequest,
     argv_tail.append(script_path)
     out.excluded = excluded
 
-    checked = _guard.check_script(text, facts)
+    checked = _guard.check_script(text, facts, site)
     unresolved = [r for r in checked.refusals if "--exclude" not in r]
     if unresolved:
         out.refusals = unresolved
