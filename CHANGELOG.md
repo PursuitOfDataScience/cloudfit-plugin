@@ -9,11 +9,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-16
+
 ### Changed
 
 - No em-dashes anywhere in the repo: prose, docstrings, and the strings the tools print.
   Each one was recast with the punctuation the sentence actually wanted rather than swapped
-  for a hyphen.
+  for a hyphen, and the ASCII `--` stand-ins went with them. Three of the recasts changed
+  text a caller sees, so the assertions pinning the old wording were updated. One of those
+  pinned `ask RCC` in a `capabilities` remedy, which now says "Changing this needs a Slurm
+  admin; ask yours about ...": one more site name out of the plugin.
+- The README hook claimed both directions while showing two cuts, and the chart's first
+  column read `asked` above 80G of GPU HBM, which nobody requests. It now names the idle
+  card, and the column is `allocated`, which is true of all four rows. The setup steps lost
+  the bare `# 1.` comments left over from the dropped `pip` line.
+- Both manifests published `youzhi@uchicago.edu` while every commit in the log is authored
+  from `yuyouzhi666@icloud.com`, so the repo read as though it had two owners. The manifests
+  now match the commits.
+
+### Added
+
+- Tags for every released version. `v0.1.1` was the only one that existed, so a reader had no
+  way to fetch the tree any other version shipped.
 
 ## [0.2.1] - 2026-09-16
 
@@ -154,7 +171,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 Initial release: `capabilities`, `measure`, `history`, `fit`, `check`, `submit`, `doctor`,
 the `PreToolUse` guard on `sbatch` and `gcloud`, and the `cloudfit` skill and agent.
 
-[Unreleased]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.1.1...v0.1.2
