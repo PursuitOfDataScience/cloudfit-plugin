@@ -21,12 +21,16 @@ One run is a guess and says so. Four agreeing within 10% is a recommendation.
 ## 🚀 Setup
 
 ```bash
-pip install slurmwatch slurmpast                                  # 1. the measuring tools
-claude plugin marketplace add PursuitOfDataScience/cloudfit-plugin # 2. add the marketplace
-claude plugin install cloudfit@cloudfit-plugin                     # 3. install
+claude plugin marketplace add PursuitOfDataScience/cloudfit-plugin  # 1.
+claude plugin install cloudfit@cloudfit-plugin                      # 2.
 ```
 
-4. Run `/fit <job-id>` or `/fit job.sbatch`. That's it.
+3. Run `/fit <job-id>` or `/fit job.sbatch`. That's it.
+
+No `pip install` step: on first start the server finds a Python 3.10+ and, only if that one
+cannot import `mcp`, builds a private venv in `~/.cache/cloudfit` with `mcp`, `slurmwatch`
+and `slurmpast`. Your own environment is never written to. `CLOUDFIT_PYTHON` picks the
+interpreter, `CLOUDFIT_NO_BOOTSTRAP=1` refuses to install anything.
 
 ## 🧰 What you get
 
@@ -58,8 +62,8 @@ Env vars work too: `CLOUDFIT_DEFAULT_PARTITION`, `CLOUDFIT_DEFAULT_ACCOUNT`,
 
 ## ⚠️ Gotchas
 
-- Needs `mcp>=1.28,<2`. On `mcp` 2.x the import dies and Claude Code says only
-  "Connection closed".
+- Needs Python 3.10+ and `mcp>=1.28,<2`. On `mcp` 2.x the import dies and Claude Code says
+  only "Connection closed" — the bundled venv pins the working range.
 - `history` needs `slurmdbd`; without accounting, cloudfit still fits from its own record.
 - Measuring GPU load requires the job to be running — a finished job has no HBM to read.
 

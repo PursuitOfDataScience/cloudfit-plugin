@@ -7,6 +7,7 @@ These live in the suite rather than in CI yaml so they fail on your machine firs
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -44,10 +45,55 @@ def test_every_referenced_path_exists(key):
 
 
 def test_the_server_entry_point_exists():
-    args = PLUGIN["mcpServers"]["cloudfit"]["args"]
-    assert len(args) == 1
-    rel = args[0].replace("${CLAUDE_PLUGIN_ROOT}/", "")
+    command = PLUGIN["mcpServers"]["cloudfit"]["command"]
+    rel = command.replace("${CLAUDE_PLUGIN_ROOT}/", "")
     assert (ROOT / rel).is_file()
+    for ref in PLUGIN["mcpServers"]["cloudfit"].get("args", []):
+        assert (ROOT / ref.replace("${CLAUDE_PLUGIN_ROOT}/", "")).exists()
+
+
+HOOKS_TEXT = (ROOT / "hooks" / "hooks.json").read_text()
+
+
+def test_nothing_in_the_manifests_points_outside_the_plugin():
+    """The bug this guards: the manifest named one machine's interpreter.
+
+    `/software/.../envs/AI/bin/python` exists on exactly one cluster. Everywhere
+    else the server never starts and the hook never runs, and the only symptom
+    is "Connection closed".
+    """
+    for name, text in (("plugin.json", json.dumps(PLUGIN)), ("hooks.json", HOOKS_TEXT)):
+        absolute = re.findall(r'"[^"]*?(?<!\$\{CLAUDE_PLUGIN_ROOT\})(/(?:usr|opt|home|software|'
+                              r'Users|var|project|scratch)/[^"]*)"', text)
+        assert not absolute, f"{name} names a host path: {absolute}"
+
+
+@pytest.mark.parametrize("launcher", ["bin/cloudfit-server", "bin/cloudfit-hook"])
+def test_the_launchers_are_executable_and_quiet_on_stdout(launcher):
+    """stdout is the MCP channel and the hook's JSON. Diagnostics go to stderr."""
+    path = ROOT / launcher
+    assert path.is_file() and os.access(path, os.X_OK), f"{launcher} is not executable"
+    body = path.read_text()
+    assert body.startswith("#!/usr/bin/env bash")
+    for line in body.splitlines():
+        stripped = line.strip()
+        if re.match(r"^[A-Z_]+=\(", stripped):
+            continue  # an array definition, not a command that can print
+        if stripped.startswith(("echo ", "printf ", '"${PIP[@]}"')) or " pip install" in stripped:
+            assert ">&2" in stripped, f"{launcher} writes to stdout: {stripped}"
+
+
+def test_both_entry_points_go_through_a_launcher():
+    assert PLUGIN["mcpServers"]["cloudfit"]["command"].endswith("bin/cloudfit-server")
+    assert "bin/cloudfit-hook" in HOOKS_TEXT
+
+
+def test_the_launcher_refuses_a_python_older_than_the_package_supports():
+    floor = re.search(r'requires-python\s*=\s*"([^"]+)"', PYPROJECT_TEXT).group(1)
+    major, minor = re.search(r"(\d+)\.(\d+)", floor).groups()
+    for launcher in ("bin/cloudfit-server", "bin/cloudfit-hook"):
+        body = (ROOT / launcher).read_text()
+        assert f"({major}, {minor})" in body, f"{launcher} checks the wrong Python floor"
 
 
 def test_mcp_is_held_below_2x():

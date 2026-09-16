@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Launches the MCP server on whatever Python this machine has, installing the
+# server's own dependency if it is missing.
+#
+# Two rules govern everything here:
+#   1. stdout belongs to the MCP protocol. Every diagnostic goes to stderr, or
+#      the client sees framing garbage and reports "Connection closed".
+#   2. Nothing is installed into an interpreter the user did not give us. If the
+#      chosen Python already imports `mcp`, we use it untouched; only when it
+#      cannot do we build a private venv under the cache dir.
+#
+# Override anything: CLOUDFIT_PYTHON=/path/to/python, CLOUDFIT_VENV=/path/to/venv,
+# CLOUDFIT_NO_BOOTSTRAP=1 to refuse to install and fail loudly instead.
+set -euo pipefail
+
+log() { printf 'cloudfit: %s\n' "$*" >&2; }
+
+usable() {  # a Python that is >= 3.10
+  [ -n "${1:-}" ] && command -v "$1" >/dev/null 2>&1 &&
+    "$1" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' 2>/dev/null
+}
+
+pick_python() {
+  if [ -n "${CLOUDFIT_PYTHON:-}" ]; then
+    usable "$CLOUDFIT_PYTHON" && { echo "$CLOUDFIT_PYTHON"; return 0; }
+    log "CLOUDFIT_PYTHON=$CLOUDFIT_PYTHON is not a Python >= 3.10; looking elsewhere"
+  fi
+  for candidate in python3.13 python3.12 python3.11 python3.10 python3 python; do
+    usable "$candidate" && { command -v "$candidate"; return 0; }
+  done
+  return 1
+}
+
+has_mcp() { "$1" -c 'import mcp' >/dev/null 2>&1; }
+
+PYTHON="$(pick_python)" || {
+  log "no Python 3.10+ on PATH. Set CLOUDFIT_PYTHON to one."
+  exit 1
+}
+
+if ! has_mcp "$PYTHON"; then
+  VENV="${CLOUDFIT_VENV:-${XDG_CACHE_HOME:-$HOME/.cache}/cloudfit/venv}"
+  if [ -x "$VENV/bin/python" ] && has_mcp "$VENV/bin/python"; then
+    PYTHON="$VENV/bin/python"
+  elif [ -n "${CLOUDFIT_NO_BOOTSTRAP:-}" ]; then
+    log "$PYTHON cannot import mcp and CLOUDFIT_NO_BOOTSTRAP is set."
+    exit 1
+  else
+    # First run on this machine. slurmwatch and slurmpast come along: they are
+    # what cloudfit measures with, and a venv nobody else shares is the one
+    # place we can add them without touching the user's environment.
+    log "first run: building $VENV (mcp, slurmwatch, slurmpast)"
+    "$PYTHON" -m venv "$VENV" >&2 || { log "could not create $VENV"; exit 1; }
+    # --no-cache-dir: a plugin should not leave hundreds of MB of pip cache
+    # behind on a machine whose disk is not ours.
+    PIP=("$VENV/bin/python" -m pip install --quiet --disable-pip-version-check --no-cache-dir)
+    "${PIP[@]}" --upgrade pip >&2 || true
+    "${PIP[@]}" "mcp>=1.28,<2" slurmwatch slurmpast >&2 ||
+      { log "dependency install failed"; exit 1; }
+    PYTHON="$VENV/bin/python"
+  fi
+fi
+
+exec "$PYTHON" "${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/cloudfit/server.py"

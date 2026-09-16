@@ -9,6 +9,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-16
+
+### Fixed
+
+- **The plugin started on exactly one machine.** `plugin.json` and `hooks/hooks.json` named
+  an absolute interpreter path from the author's cluster, so anywhere else the MCP server
+  never started ("Connection closed", which names no cause) and the `PreToolUse` guard
+  silently never ran. Both now point at `${CLAUDE_PLUGIN_ROOT}/bin/cloudfit-*` launchers that
+  find a Python 3.10+ on the host. `test_nothing_in_the_manifests_points_outside_the_plugin`
+  fails if a host path returns.
+
+### Added
+
+- `bin/cloudfit-server`: resolves a Python, and if that interpreter cannot import `mcp`,
+  builds a private venv (`CLOUDFIT_VENV`, default `~/.cache/cloudfit/venv`) holding `mcp`,
+  `slurmwatch` and `slurmpast` — installed `--no-cache-dir`, so the plugin leaves no pip
+  cache behind. An interpreter that already has `mcp` is used untouched; nothing is ever
+  installed into the user's own environment. `CLOUDFIT_PYTHON` overrides the choice and
+  `CLOUDFIT_NO_BOOTSTRAP=1` refuses to install and fails loudly instead. Diagnostics go to
+  stderr only: stdout is the MCP channel.
+- `bin/cloudfit-hook`: the same resolution for the guard, stdlib-only so it needs no venv.
+  Every failure path exits 0 printing nothing — a hook that errors must not block the Bash
+  call it was watching.
+- Tests that both launchers are executable, keep stdout clean, and check the same Python
+  floor `pyproject.toml` declares.
+
+### Changed
+
+- The README's install is two commands. The `pip install slurmwatch slurmpast` step is gone:
+  the server does it, once, only if it has to.
+
 ## [0.2.0] - 2026-09-16
 
 ### Changed
@@ -117,7 +148,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 Initial release: `capabilities`, `measure`, `history`, `fit`, `check`, `submit`, `doctor`,
 the `PreToolUse` guard on `sbatch` and `gcloud`, and the `cloudfit` skill and agent.
 
-[Unreleased]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/PursuitOfDataScience/cloudfit-plugin/compare/v0.1.0...v0.1.1

@@ -149,7 +149,8 @@ def test_the_hook_manifest_has_the_canonical_shape():
     handler = entry["hooks"][0]
     assert handler["type"] == "command"
     assert "${CLAUDE_PLUGIN_ROOT}" in handler["command"]
-    assert handler["command"].endswith("cloudfit/hook.py")
+    # Through the launcher, which finds a Python rather than naming one.
+    assert handler["command"].endswith("bin/cloudfit-hook")
 
 
 def test_the_marketplace_manifest_offers_this_plugin():
@@ -164,9 +165,11 @@ def test_the_mcp_entry_point_resolves():
     manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
     servers = manifest["mcpServers"]
     assert list(servers) == ["cloudfit"]
-    arg = servers["cloudfit"]["args"][0]
-    assert arg.startswith("${CLAUDE_PLUGIN_ROOT}/")
-    assert (ROOT / arg.replace("${CLAUDE_PLUGIN_ROOT}/", "")).exists()
+    command = servers["cloudfit"]["command"]
+    assert command.startswith("${CLAUDE_PLUGIN_ROOT}/")
+    assert (ROOT / command.replace("${CLAUDE_PLUGIN_ROOT}/", "")).exists()
+    # No interpreter is named: the launcher picks one that exists on this host.
+    assert "python" not in command
 
 
 def test_no_mcp_json_sits_at_the_repo_root():

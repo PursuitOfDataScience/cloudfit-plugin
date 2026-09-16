@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Runs the PreToolUse guard. Stdlib only, so it never needs the venv.
+#
+# A hook that fails must fail silently: anything on stdout that is not hook JSON
+# confuses the client, and a non-zero exit blocks the Bash call it was watching.
+# So every failure path here is `exit 0` with nothing printed.
+set -uo pipefail
+
+usable() {
+  [ -n "${1:-}" ] && command -v "$1" >/dev/null 2>&1 &&
+    "$1" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' 2>/dev/null
+}
+
+PYTHON=""
+for candidate in "${CLOUDFIT_PYTHON:-}" python3.13 python3.12 python3.11 python3.10 python3 python; do
+  usable "$candidate" && { PYTHON="$candidate"; break; }
+done
+[ -n "$PYTHON" ] || exit 0
+
+ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+exec "$PYTHON" "$ROOT/cloudfit/hook.py"

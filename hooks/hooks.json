@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/software/python-miniforge-25.3.0-el8-x86_64/envs/AI/bin/python ${CLAUDE_PLUGIN_ROOT}/cloudfit/hook.py"
+            "command": "${CLAUDE_PLUGIN_ROOT}/bin/cloudfit-hook"
           }
         ]
       }
