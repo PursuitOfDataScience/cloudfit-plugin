@@ -134,7 +134,7 @@ def test_the_plugin_manifest_points_at_files_that_exist():
     for key in ("skills", "commands", "agents"):
         for entry in manifest[key]:
             assert (ROOT / entry).exists(), entry
-    assert (ROOT / manifest["mcpServers"]).exists()
+    assert isinstance(manifest["mcpServers"], dict)  # see the entry-point test below
     # hooks/hooks.json is auto-loaded; declaring it too makes the plugin fail to
     # load as a duplicate, which `validate --strict` does not catch.
     assert "hooks" not in manifest
@@ -161,11 +161,57 @@ def test_the_marketplace_manifest_offers_this_plugin():
 
 
 def test_the_mcp_entry_point_resolves():
-    servers = json.loads((ROOT / ".mcp.json").read_text())["mcpServers"]
+    manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
+    servers = manifest["mcpServers"]
     assert list(servers) == ["cloudfit"]
     arg = servers["cloudfit"]["args"][0]
     assert arg.startswith("${CLAUDE_PLUGIN_ROOT}/")
     assert (ROOT / arg.replace("${CLAUDE_PLUGIN_ROOT}/", "")).exists()
+
+
+def test_no_mcp_json_sits_at_the_repo_root():
+    # A .mcp.json at the root has two identities at once: the plugin's server
+    # definition, where ${CLAUDE_PLUGIN_ROOT} is set, AND an auto-discovered
+    # project-scope server for anyone whose cwd is this repo, where it is NOT.
+    # The second one expands to /cloudfit/server.py and fails, and the only thing
+    # /mcp reports is `cloudfit  ✘ failed` next to a working copy of the same name.
+    # Declaring the server inline in plugin.json leaves nothing to discover.
+    assert not (ROOT / ".mcp.json").exists()
+
+
+def test_the_declared_versions_agree():
+    # plugin.json's `version` is a pin: Claude Code serves installed users whatever
+    # content carried the string they already hold, so shipping a change without
+    # bumping it is invisible -- `plugin update` reports "already at the latest".
+    # Three places name the version, and drift between them is silent.
+    manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
+    version = manifest["version"]
+    assert re.fullmatch(r"\d+\.\d+\.\d+", version), version
+
+    pyproject = re.search(r'^version = "([^"]+)"', (ROOT / "pyproject.toml").read_text(),
+                          re.MULTILINE)
+    assert pyproject and pyproject.group(1) == version, "pyproject.toml disagrees"
+
+    # The marketplace entry must not also declare one: plugin.json wins without warning,
+    # so a version there would be masked rather than applied.
+    market = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text())
+    assert "version" not in market["plugins"][0]
+
+    released = re.findall(r"^## \[(\d+\.\d+\.\d+)\]", (ROOT / "CHANGELOG.md").read_text(),
+                          re.MULTILINE)
+    assert released, "CHANGELOG.md has no released version heading"
+    assert released[0] == version, f"CHANGELOG.md newest entry is {released[0]}"
+
+
+def test_the_mcp_dependency_excludes_the_two_line():
+    # server.py imports mcp.server.fastmcp, which mcp 2.x renamed to MCPServer.
+    # An unbounded `mcp>=1.28` resolves to 2.x and the import dies at startup --
+    # and the only thing Claude Code reports is "Connection closed".
+    pyproject = (ROOT / "pyproject.toml").read_text()
+    spec = re.search(r'"(mcp[^"]*)"', pyproject)
+    assert spec, "pyproject declares no mcp dependency"
+    assert "<2" in spec.group(1), spec.group(1)
+    assert "mcp.server.fastmcp" in (PACKAGE / "server.py").read_text()
 
 
 def test_the_hook_never_exits_two():

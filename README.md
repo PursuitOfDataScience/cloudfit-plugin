@@ -40,8 +40,9 @@ claude plugin marketplace add PursuitOfDataScience/cloudfit-plugin
 claude plugin install cloudfit@cloudfit-plugin
 ```
 
-Then `/fit <job-id>` or `/fit job.sbatch`. Needs the `mcp` SDK on the interpreter in
-`.mcp.json`.
+Then `/fit <job-id>` or `/fit job.sbatch`. Needs `mcp>=1.28,<2` on the interpreter in
+the plugin manifest — on `mcp` 2.x the import fails and Claude Code reports only "Connection
+closed".
 
 ## Tools
 
@@ -64,5 +65,5 @@ Not built yet: `apply`, `bootstrap`, `launch`, `provision`, `teardown`, `sweep`,
 ruff check . && python -m pytest -q && claude plugin validate . --strict
 ```
 
-169 tests, no cluster or cloud needed. In `fixtures/`, `_real` was captured from a live
+171 tests, no cluster or cloud needed. In `fixtures/`, `_real` was captured from a live
 command and `_synthetic` was built from the real schema — never blurred.

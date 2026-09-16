@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-if __package__ in (None, ""):  # invoked as a script by the .mcp.json entry point
+if __package__ in (None, ""):  # invoked as a script by the plugin manifest entry
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mcp.server.fastmcp import FastMCP  # noqa: E402
