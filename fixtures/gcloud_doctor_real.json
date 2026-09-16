@@ -2,7 +2,7 @@
   "_fixture": "real",
   "_captured": "2026-09-15",
   "_project": "example-project-9f2c",
-  "_note": "Trimmed to the entries doctor reads. GPUS-ALL-REGIONS-per-project has an empty dimensionsInfos[].details in `quotas info list` even though the limit is a hard 0 -- so the limit is read from `project-info describe`, and `quotas info list` is used only for quotaIncreaseEligibility.",
+  "_note": "Trimmed to the entries doctor reads. GPUS-ALL-REGIONS-per-project has an empty dimensionsInfos[].details in `quotas info list` even though the limit is a hard 0, so the limit is read from `project-info describe`, and `quotas info list` is used only for quotaIncreaseEligibility.",
   "services_list": [
     {
       "config": {

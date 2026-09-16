@@ -8,7 +8,7 @@ requires-python = ">=3.10"
 # mcp 2.x renamed FastMCP to MCPServer, so server.py's import fails there and the
 # only symptom Claude Code shows is "Connection closed". Hold it to the v1 line.
 dependencies = ["mcp>=1.28,<2"]
-# Not Python imports -- cloudfit shells out to these, so they are external tools:
+# Not Python imports; cloudfit shells out to these, so they are external tools:
 #   slurmwatch  live telemetry      pypi.org/project/slurmwatch
 #   slurmpast   finished-job history  pypi.org/project/slurmpast
 license = "MIT"

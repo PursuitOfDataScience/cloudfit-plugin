@@ -1,4 +1,4 @@
-"""cloudfit — what a job should have asked for, from what it actually used.
+"""cloudfit: what a job should have asked for, from what it actually used.
 
 This module holds only pure data types and unit helpers, so `decide` and `guard`
 can import them without pulling in anything that shells out.
@@ -79,11 +79,11 @@ class Observation:
 
     @property
     def mem_peak_trusted_bytes(self) -> int | None:
-        """The OOM-relevant peak -- and never below a figure that is a real peak.
+        """The OOM-relevant peak, and never below a figure that is a real peak.
 
         `memory.peak` / MaxRSS count reclaimable page cache, which Arrow-backed
         datasets inflate badly, so the anonymous working set is the tighter
-        number -- but only where it is itself a peak over the run.
+        number, but only where it is itself a peak over the run.
 
         A live `slurmwatch --once` snapshot has no history behind it: its
         `peak_working_set_bytes` is that instant's anonymous set. A job that
@@ -105,7 +105,7 @@ class Observation:
     def mem_disagrees(self) -> bool:
         """True only where the measured cache actually accounts for the gap.
 
-        The old test -- any gap wider than 25% -- fired on every phased job,
+        The old test (any gap wider than 25%) fired on every phased job,
         then blamed page cache for what was really an earlier phase's freed
         arrays. Cache has to carry at least half the gap to be named for it.
         """
@@ -139,7 +139,7 @@ class Observation:
 
 @dataclass(frozen=True)
 class Directive:
-    """One axis, corrected — or explicitly not corrected, and why."""
+    """One axis, corrected, or explicitly not corrected, and why."""
 
     axis: str
     direction: str  # down | up | hold | flag | unknown

@@ -2,7 +2,7 @@
 
 The dialog and the tool cannot disagree because they run the same predicates.
 
-Exit status matters: a broken hook must exit 1, never 2 — exit 2 blocks the very
+Exit status matters: a broken hook must exit 1, never 2. Exit 2 blocks the very
 tool it was watching, so a bug here would stop the user submitting anything.
 """
 

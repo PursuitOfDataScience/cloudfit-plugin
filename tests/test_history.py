@@ -185,7 +185,7 @@ def test_a_legacy_cgroup_row_is_not_sized_to_a_sampled_instant(tmp_path):
     """Records written before 0.1.2 carry no `mem_peak_is_lifetime`.
 
     Without the migration such a row sizes `--mem` to the working set at the
-    moment of sampling -- the very reading 0.1.2 stopped trusting.
+    moment of sampling, the very reading 0.1.2 stopped trusting.
     """
     row = {
         "source": "slurmwatch", "kind": "sample", "workload": "linalg",

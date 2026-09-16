@@ -36,7 +36,7 @@ def _facts_for(request: _guard.SbatchRequest, runner=None,
     """Partition limits for whatever partition this script will actually use.
 
     With no `--partition` and no cluster default to fall back on there is no
-    partition to check against — returning None says "unchecked" rather than
+    partition to check against. Returning None says "unchecked" rather than
     inventing a name and reporting it absent.
     """
     name = request.partition or (site or _site_for(runner)).default_partition
@@ -48,7 +48,7 @@ def _facts_for(request: _guard.SbatchRequest, runner=None,
 @mcp.tool()
 def site(default_partition: str | None = None, account: str | None = None,
          discouraged_partitions: list[str] | None = None, save: bool = False) -> dict:
-    """What this cluster calls things — and how to correct cloudfit when it guesses wrong.
+    """What this cluster calls things, and how to correct cloudfit when it guesses wrong.
 
     Called with no arguments it only reports: the default partition `sinfo`
     marks with `*`, every partition, and the accounts this user is associated

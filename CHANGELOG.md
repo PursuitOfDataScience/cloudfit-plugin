@@ -9,6 +9,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+### Changed
+
+- No em-dashes anywhere in the repo: prose, docstrings, and the strings the tools print.
+  Each one was recast with the punctuation the sentence actually wanted rather than swapped
+  for a hyphen.
+
 ## [0.2.1] - 2026-09-16
 
 ### Fixed
@@ -24,13 +30,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 - `bin/cloudfit-server`: resolves a Python, and if that interpreter cannot import `mcp`,
   builds a private venv (`CLOUDFIT_VENV`, default `~/.cache/cloudfit/venv`) holding `mcp`,
-  `slurmwatch` and `slurmpast` — installed `--no-cache-dir`, so the plugin leaves no pip
+  `slurmwatch` and `slurmpast`, installed `--no-cache-dir` so the plugin leaves no pip
   cache behind. An interpreter that already has `mcp` is used untouched; nothing is ever
   installed into the user's own environment. `CLOUDFIT_PYTHON` overrides the choice and
   `CLOUDFIT_NO_BOOTSTRAP=1` refuses to install and fails loudly instead. Diagnostics go to
   stderr only: stdout is the MCP channel.
 - `bin/cloudfit-hook`: the same resolution for the guard, stdlib-only so it needs no venv.
-  Every failure path exits 0 printing nothing — a hook that errors must not block the Bash
+  Every failure path exits 0 printing nothing: a hook that errors must not block the Bash
   call it was watching.
 - Tests that both launchers are executable, keep stdout clean, and check the same Python
   floor `pyproject.toml` declares.
@@ -48,14 +54,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
   `guard.DEFAULT_ACCOUNT` held one site's partition and account, applied to everyone: on any
   other cluster `check` substituted a partition that does not exist there, refused the script
   for it, and told the user to add an account they have never heard of. Both constants are
-  gone. Everything site-specific now arrives as `SiteFacts`, discovered per cluster —
+  gone. Everything site-specific now arrives as `SiteFacts`, discovered per cluster:
   the default partition is the one `sinfo` marks `*`, the accounts are whatever `sacctmgr`
   says this user is associated with.
 - A missing `--account` is no longer refused on sight. Most clusters fill it from the user's
   default association, so the old rule rejected scripts `sbatch` would have accepted
   (reproduced on Slurm 22.05, `ClusterName=lab`). It now refuses only when the lookup
-  succeeded and came back empty — the one case that really does fail with "Account is not
-  specified" — and names `sacctmgr` rather than an account of its own.
+  succeeded and came back empty (the one case that really does fail with "Account is not
+  specified"), and it names `sacctmgr` rather than an account of its own.
 - `policy_warnings` no longer knows which partitions bill. A site says so with
   `CLOUDFIT_DISCOURAGED_PARTITIONS`; unset means cloudfit has no opinion.
 - Host, user and account names are scrubbed from every fixture, including a GCP project id
@@ -85,13 +91,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
   arrays before the next reads far under its own high mark, so a late sample recommended a
   `--mem` the job would OOM against. Measured on GCP: a six-phase linear-algebra run held
   1.88 GiB during a 9000x9000 GEMM, then read 0.09 GiB three phases later while the cgroup
-  watermark stayed at 1.90 GiB throughout — the old rule would have said `--mem=1G`. The
+  watermark stayed at 1.90 GiB throughout, so the old rule would have said `--mem=1G`. The
   cgroup watermark is now the floor unless the cache reading genuinely accounts for the gap.
   The repo's own `slurmwatch_cpu_overask_real.json` fixture already carried the evidence:
   12.4 GiB watermark, 0.17 GiB working set, and only 0.46 GiB of cache to explain it.
 - The page-cache exclusion now has to earn its name. `mem_disagrees` fired on any gap wider
   than 25%, then blamed reclaimable page cache for what was usually an earlier phase's freed
-  anonymous memory — it reported "the difference is reclaimable page cache" for a 1.6 GiB gap
+  anonymous memory: it reported "the difference is reclaimable page cache" for a 1.6 GiB gap
   measured alongside 16 MB of cache. Cache must now carry at least half the gap. The Arrow
   case the exclusion exists for is unchanged: 52 GiB of measured cache against a 52 GiB gap
   still comes off, and still sizes to the 9.3 GiB anonymous set.
@@ -103,7 +109,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - GitHub Actions: `ci` (ruff, pytest on 3.10-3.13, an import of the MCP server against the
   pinned `mcp` range, and `claude plugin validate --strict`) and `release`, which refuses a
   `v*` tag that disagrees with `plugin.json` and cuts notes from this file.
-- `tests/test_manifest.py` — the install surface is checked by the suite rather than by CI
+- `tests/test_manifest.py`: the install surface is checked by the suite rather than by CI
   yaml, so a missing skill path or a dropped `mcp` ceiling fails locally first.
 
 
@@ -113,13 +119,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 - Pin `mcp>=1.28,<2`. `mcp` 2.x renamed `FastMCP` to `MCPServer`, so `cloudfit/server.py`
   raised `ModuleNotFoundError` at import and the only thing Claude Code reported was
-  `cloudfit (CONNECTION_CLOSED): "Connection closed"` — with no indication the cause was a
+  `cloudfit (CONNECTION_CLOSED): "Connection closed"`, with no indication the cause was a
   resolved dependency. Reproduced on a Debian 12 host where pip resolved `mcp` 2.x; the cluster
   was unaffected only because its env happens to hold 1.28.1.
 
 - Declare the MCP server inline in `plugin.json` and delete `.mcp.json`. That file had two
   identities at once: the plugin's server definition, where `${CLAUDE_PLUGIN_ROOT}` is set,
-  and — because it sat at the repo root — an auto-discovered *project-scope* server for
+  and (because it sat at the repo root) an auto-discovered *project-scope* server for
   anyone whose cwd is this repo, where that variable is not set and the path expands to
   `/cloudfit/server.py`. `/mcp` showed `cloudfit  ✘ failed` beside a working copy of the
   same name, and the project-scope one additionally sat behind an approval gate it could

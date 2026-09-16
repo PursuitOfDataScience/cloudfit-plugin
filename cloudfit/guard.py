@@ -5,8 +5,8 @@ satisfied, so the caller never has to restate the rule.
 
 The line between the two severities: a **refusal** is something the scheduler
 would reject, something that silently squats a resource someone else needs, or a
-number that is knowably wrong. A **warning** is policy — the local default, the
-partition that bills — which the user is allowed to overrule.
+number that is knowably wrong. A **warning** is policy (the local default, the
+partition that bills), which the user is allowed to overrule.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from . import GIB, Observation, fmt_gib, fmt_slurm_time, parse_slurm_mem, parse_
 # No partition, account or "billed partition" name is baked in. Those are site
 # policy, and a plugin that ships one cluster's names checks every other
 # cluster's scripts against limits that belong to nothing. Everything
-# site-specific arrives as `SiteFacts` — read from the cluster itself, or from
+# site-specific arrives as `SiteFacts`, read from the cluster itself or from
 # these env vars when a site wants to state it. This module stays pure: it
 # never reads the environment, so the same inputs always give the same verdict.
 ENV_DEFAULT_PARTITION = "CLOUDFIT_DEFAULT_PARTITION"
@@ -173,7 +173,7 @@ def _split_directive(body: str) -> list[str]:
 def insufficient_sample(n: int) -> str | None:
     if n <= 0:
         return (
-            "no past runs of this workload and no live telemetry — submit it once "
+            "no past runs of this workload and no live telemetry. Submit it once "
             "first, then fit it. A number with n=0 behind it is invention."
         )
     return None
@@ -185,7 +185,7 @@ def below_observed_peak(axis: str, recommended: float | None, observed: float | 
         return None
     if recommended < observed:
         return (
-            f"{axis}: refusing to recommend {recommended:g}{unit} — a run already "
+            f"{axis}: refusing to recommend {recommended:g}{unit}, because a run already "
             f"peaked at {observed:g}{unit}. A fit never goes below an observed peak."
         )
     return None
@@ -213,7 +213,7 @@ def exceeds_partition_limit(request: SbatchRequest, facts) -> list[str]:
     if cpu_ceiling and request.cpus and (request.nodes or 1) == 1 and request.cpus > cpu_ceiling:
         reasons.append(
             f"{request.cpus} cores on one node exceeds the largest node in {name} "
-            f"({cpu_ceiling} cores) — it would sit PENDING forever"
+            f"({cpu_ceiling} cores); it would sit PENDING forever"
         )
 
     mem_ceiling = facts.max_mem_per_node_bytes or facts.node_mem_max_bytes
@@ -221,7 +221,7 @@ def exceeds_partition_limit(request: SbatchRequest, facts) -> list[str]:
             and request.mem_bytes > mem_ceiling):
         reasons.append(
             f"--mem={request.get('--mem') or request.mem_bytes} exceeds the largest node in "
-            f"{name} ({fmt_gib(mem_ceiling)}) — it would sit PENDING forever"
+            f"{name} ({fmt_gib(mem_ceiling)}); it would sit PENDING forever"
         )
 
     if request.gpus and facts.gpu_nodes_known and not facts.gpu_nodes:
@@ -252,7 +252,7 @@ def missing_account(request: SbatchRequest, site=None) -> str | None:
         return None
     suggestion = getattr(site, "suggested_account", None)
     hint = (f"add `#SBATCH --account={suggestion}`" if suggestion
-            else "add `#SBATCH --account=<account>` — "
+            else "add `#SBATCH --account=<account>`: "
                  "`sacctmgr -nP show assoc user=$USER format=account` lists yours")
     return (
         "no --account, and your Slurm user has no default association, so this "
@@ -415,7 +415,7 @@ def check_script(text: str, facts=None, site=None) -> CheckResult:
                             unguarded_gpu_nodes(request, facts)) if r]
     refusals += exceeds_partition_limit(request, facts)
     if not request.directives:
-        refusals.append("no #SBATCH directives found — is this a batch script?")
+        refusals.append("no #SBATCH directives found. Is this a batch script?")
     warnings = policy_warnings(request, facts, site)
     if facts is not None and not getattr(facts, "queried", True):
         warnings.append(

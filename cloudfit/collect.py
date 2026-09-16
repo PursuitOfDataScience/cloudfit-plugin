@@ -1,7 +1,7 @@
 """The subprocess boundary: every external command in cloudfit is issued here.
 
 One `Runner` interface, one real implementation, one fake. Nothing else in the
-package calls `subprocess` — which is what makes the decision logic testable
+package calls `subprocess`, which is what makes the decision logic testable
 against fixtures and the cloud half testable without a cloud.
 """
 
@@ -209,7 +209,7 @@ def measure(job_id: str, runner: Runner | None = None, *, allow_srun: bool = Tru
         return out
 
     if not result.ok:
-        # Exit 1 is slurmwatch's "no live telemetry" -- the object is still printed.
+        # Exit 1 is slurmwatch's "no live telemetry"; the object is still printed.
         out.warnings.append(
             "slurmwatch reports no live telemetry (pending, ended, or no such job); "
             "the shape below is facts only"
@@ -294,11 +294,11 @@ class PartitionFacts:
 
 @dataclass
 class SiteFacts:
-    """What this cluster calls things — asked, never assumed.
+    """What this cluster calls things: asked, never assumed.
 
     cloudfit ships no partition or account names. When a script names no
     partition there is a right answer to substitute, and `sinfo` knows it: the
-    default partition is the one it marks with `*`. Same for the account — the
+    default partition is the one it marks with `*`. Same for the account: the
     user's default association is what `sbatch` itself would have used. A site
     that wants to state any of it instead sets the `CLOUDFIT_*` env vars.
     """
@@ -353,7 +353,7 @@ def site_facts(runner: Runner | None = None, overrides: dict | None = None) -> S
 
     Discovery (`sinfo`, `sacctmgr`) is the floor, so cloudfit works on a cluster
     nobody has configured it for. On top of that, in order: the saved profile,
-    the `CLOUDFIT_*` env vars, and whatever the caller passes right now — which
+    the `CLOUDFIT_*` env vars, and whatever the caller passes right now, which
     is how an agent adapts the plugin mid-session without editing anything.
     """
     import os
@@ -406,7 +406,7 @@ def site_facts(runner: Runner | None = None, overrides: dict | None = None) -> S
                 setattr(facts, key, value)
                 facts.source[key] = origin
 
-    # Only what something actually set — discovery is reported, not "configured".
+    # Only what something actually set. Discovery is reported, not "configured".
     facts.configured = {k: getattr(facts, k) for k in facts.source}
     return facts
 
@@ -425,7 +425,7 @@ def _scontrol_pairs(text: str) -> dict[str, str]:
 
 
 def partition_facts(partition: str, runner: Runner | None = None) -> PartitionFacts:
-    """`scontrol show partition` + `sinfo` — the live limits, not a hardcoded table."""
+    """`scontrol show partition` + `sinfo`: the live limits, not a hardcoded table."""
     runner = runner or default_runner()
     facts = PartitionFacts(name=partition)
 

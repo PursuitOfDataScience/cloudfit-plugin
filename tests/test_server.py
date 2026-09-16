@@ -1,4 +1,4 @@
-"""The MCP surface, and the submit path — against a fake, never a real queue."""
+"""The MCP surface, and the submit path, against a fake and never a real queue."""
 
 from __future__ import annotations
 

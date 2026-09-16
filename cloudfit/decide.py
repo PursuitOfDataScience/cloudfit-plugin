@@ -1,4 +1,4 @@
-"""The decision logic — the only genuinely new code here.
+"""The decision logic: the only genuinely new code here.
 
 Telemetry in, directives plus per-directive reasoning plus confidence out. No
 subprocess calls in this module, by design: everything it needs arrives as
@@ -63,19 +63,19 @@ def sample_confidence(n: int, spread: float | None, *, rollup: bool = False,
         return Confidence("none", 0, None, f"{where}no data on this axis")
     if n == 1:
         return Confidence("low", 1, None,
-                          f"{where}n=1 — one observation is a guess, not a recommendation")
+                          f"{where}n=1: one observation is a guess, not a recommendation")
     if n < RECOMMENDED_N:
         return Confidence("medium", n, spread,
-                          f"{where}n={n} — tentative; {RECOMMENDED_N} agreeing runs is the bar")
+                          f"{where}n={n}: tentative; {RECOMMENDED_N} agreeing runs is the bar")
     if rollup:
         return Confidence("medium", n, None,
-                          f"{where}n={n} from a rollup — per-run spread is not recoverable, "
+                          f"{where}n={n} from a rollup: per-run spread is not recoverable, "
                           "so agreement cannot be checked")
     if spread is None:
         return Confidence("medium", n, None, f"{where}n={n} but the spread is unknown")
     if spread <= AGREEMENT_PERCENT:
         return Confidence("high", n, spread,
-                          f"{where}n={n} agreeing within {spread:g}% — a recommendation")
+                          f"{where}n={n} agreeing within {spread:g}%: a recommendation")
     return Confidence("medium", n, spread,
                       f"{where}n={n} but they spread {spread:g}%; the peak is not settled")
 
@@ -118,7 +118,7 @@ def _cores(observations, request, ceiling) -> Directive | None:
     if peak == 0:
         reason = (
             "no CPU work at all was observed (0.0 effective cores). Either this is a "
-            "reservation/idle allocation, or the sample landed between bursts — do not "
+            "reservation/idle allocation, or the sample landed between bursts. Do not "
             "cut cores on this evidence alone"
         )
         return Directive("cores", "flag", reason, conf, flag="--cpus-per-task",
@@ -132,13 +132,13 @@ def _cores(observations, request, ceiling) -> Directive | None:
     )
     if averaged:
         reason += (
-            ". This is sacct's CPU-seconds / elapsed, an average that hides bursts — confirm with "
-            "slurmwatch's peak_effective_cores before cutting"
+            ". This is sacct's CPU-seconds / elapsed, an average that hides bursts, so "
+            "confirm with slurmwatch's peak_effective_cores before cutting"
         )
     if clamped:
         reason += f", clamped to the partition ceiling of {int(ceiling)}"
     if current and peak / current < 0.5:
-        reason += (f". Cores scale sublinearly for many tools — {peak:.1f}/{current} is "
+        reason += (f". Cores scale sublinearly for many tools: {peak:.1f}/{current} is "
                    f"{peak / current:.0%}")
     return Directive("cores", _direction(recommended, current), reason, conf,
                      flag="--cpus-per-task", current=str(current) if current else None,
@@ -182,7 +182,7 @@ def _memory(observations, request, ceiling) -> tuple[Directive | None, list[str]
             f"{fmt_gib(worst.mem_peak_working_set_bytes)} on job {worst.job_id}, and the "
             f"{fmt_gib(worst.mem_cache_bytes)} of reclaimable page cache measured alongside it "
             "accounts for the gap (Arrow-backed datasets inflate it badly). Sized to the working "
-            "set, which is the OOM-relevant number — not to the larger figure."
+            "set, which is the OOM-relevant number, not to the larger figure."
         )
         reason += "; page cache excluded"
 
@@ -192,14 +192,14 @@ def _memory(observations, request, ceiling) -> tuple[Directive | None, list[str]
         warnings.append(
             f"job {worst.job_id} read a {fmt_gib(worst.mem_peak_working_set_bytes)} working set "
             f"against a {fmt_gib(worst.mem_peak_bytes)} cgroup watermark, and the measured page "
-            "cache does not account for the gap — an earlier phase held more and freed it. A live "
+            "cache does not account for the gap: an earlier phase held more and freed it. A live "
             "sample's working set is one instant, not a peak, so this is sized to the watermark."
         )
         reason += "; sized to the cgroup lifetime watermark, not the sampled working set"
 
     direction = _direction(recommended_gib * GIB, current)
     if current and recommended_gib * GIB < current:
-        reason += f" — down from {fmt_gib(current)}"
+        reason += f", down from {fmt_gib(current)}"
     return Directive("memory", direction, reason, conf, flag="--mem",
                      current=fmt_gib(current) if current else None,
                      recommended=f"{recommended_gib}G",
@@ -227,7 +227,7 @@ def _gpu_memory(observations, request) -> Directive | None:
         scale = HBM_TARGET_PERCENT / max(hbm, 1.0)
         return Directive(
             "gpu_memory", "up",
-            f"{model} is at {hbm:.0f}% HBM{used} — the expensive resource is idle. Raise batch "
+            f"{model} is at {hbm:.0f}% HBM{used}: the expensive resource is idle. Raise batch "
             f"size / K / sequence length / KV-cache by roughly {scale:.1f}x to reach the "
             f"~{HBM_TARGET_PERCENT:.0f}% target. This is a knob in the training or inference "
             "script, not an #SBATCH flag",
@@ -236,13 +236,13 @@ def _gpu_memory(observations, request) -> Directive | None:
     if hbm > HBM_TRIM_ABOVE:
         return Directive(
             "gpu_memory", "down",
-            f"{model} is at {hbm:.0f}% HBM{used} — above ~{HBM_TRIM_ABOVE:.0f}% a transient "
+            f"{model} is at {hbm:.0f}% HBM{used}: above ~{HBM_TRIM_ABOVE:.0f}% a transient "
             f"allocation OOMs. Trim the knobs back towards {HBM_TARGET_PERCENT:.0f}%",
             conf, current=f"{hbm:.0f}% HBM", recommended=f"~{HBM_TARGET_PERCENT:.0f}% HBM",
             observed=f"{hbm:.0f}% HBM at peak")
     return Directive(
         "gpu_memory", "hold",
-        f"{model} is at {hbm:.0f}% HBM{used} — inside the ~{HBM_TARGET_PERCENT:.0f}% target band. "
+        f"{model} is at {hbm:.0f}% HBM{used}: inside the ~{HBM_TARGET_PERCENT:.0f}% target band. "
         "Leave it alone",
         conf, current=f"{hbm:.0f}% HBM", recommended=f"{hbm:.0f}% HBM",
         observed=f"{hbm:.0f}% HBM at peak")
@@ -261,18 +261,18 @@ def _gpu_compute(observations, request) -> Directive | None:
 
     if util >= GPU_COMPUTE_FLOOR_PERCENT:
         return Directive("gpu_compute", "hold",
-                         f"GPU compute at {util:.0f}% — the card is the bottleneck, which is where "
+                         f"GPU compute at {util:.0f}%: the card is the bottleneck, which is where "
                          "it should be", conf, current=f"{util:.0f}%", recommended=f"{util:.0f}%",
                          observed=f"{util:.0f}% utilisation")
     if hbm >= HBM_RAISE_BELOW:
         reason = (
-            f"GPU compute is {util:.0f}% while HBM is {hbm:.0f}% full — the card is loaded and "
+            f"GPU compute is {util:.0f}% while HBM is {hbm:.0f}% full: the card is loaded and "
             "idle, so this is a data-pipeline stall (loader workers, tokenisation, I/O), not a "
             "sizing problem. Raising batch size will not fix it"
         )
     else:
         reason = (
-            f"GPU compute is {util:.0f}% and HBM is only {hbm:.0f}% — both low. Raise the work per "
+            f"GPU compute is {util:.0f}% and HBM is only {hbm:.0f}%: both low. Raise the work per "
             "step (batch / packing / fewer grad-accum micro-steps) before blaming the pipeline"
         )
     return Directive("gpu_compute", "flag", reason, conf, current=f"{util:.0f}%",
@@ -305,7 +305,7 @@ def _walltime(observations, request, ceiling) -> tuple[Directive | None, list[st
             "run's duration. Fit it again after it finishes"
         )
         return Directive("walltime", "unknown",
-                         f"still running, {fmt_slurm_time(peak)} elapsed so far — a floor, "
+                         f"still running, {fmt_slurm_time(peak)} elapsed so far, which is a floor, "
                          "not a fit",
                          conf, flag="--time", current=current_text,
                          observed=f"{fmt_slurm_time(peak)} so far"), warnings
@@ -322,7 +322,7 @@ def _walltime(observations, request, ceiling) -> tuple[Directive | None, list[st
     if timeouts:
         reason += (
             f". {len(timeouts)} run(s) hit TIMEOUT, so the requirement is at least the limit that "
-            "cut them off — this is a floor, not a fit"
+            "cut them off. This is a floor, not a fit"
         )
         direction = "up" if direction != "up" else direction
     return Directive("walltime", direction, reason, conf, flag="--time",
@@ -332,7 +332,7 @@ def _walltime(observations, request, ceiling) -> tuple[Directive | None, list[st
 
 def render_block(directives: list[Directive], request: SbatchRequest | None = None,
                  account: str | None = None) -> str:
-    """The corrected `#SBATCH` block — only the lines a fit actually changed."""
+    """The corrected `#SBATCH` block: only the lines a fit actually changed."""
     lines: list[str] = []
     if request is not None and not request.account and account:
         lines.append(f"#SBATCH --account={account}")

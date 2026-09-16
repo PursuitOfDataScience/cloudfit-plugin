@@ -122,8 +122,8 @@ _UNIT = {"KIB": 1024, "MIB": 1024**2, "GIB": GIB, "TIB": 1024**4}
 def _observations_from_slurmpast(entry: dict) -> tuple[list[Observation], list[str]]:
     """One rollup observation per axis, each carrying that axis's own run count.
 
-    slurmpast counts `runs` per workload but samples each axis separately — 100
-    runs can carry only 13 usable memory readings — so a single `n` would overstate
+    slurmpast counts `runs` per workload but samples each axis separately: 100
+    runs can carry only 13 usable memory readings, so a single `n` would overstate
     the memory sample.
     """
     name = entry.get("name")
@@ -147,7 +147,7 @@ def _observations_from_slurmpast(entry: dict) -> tuple[list[Observation], list[s
                                 mem_limit_bytes=parse_slurm_mem(_requested_mem(advice)),
                                 mem_peak_source="slurmpast rollup"))
                 if _MEM_OOM.search(observed):
-                    notes.append(f"{name}: slurmpast reports an OOM kill — the peak is a floor")
+                    notes.append(f"{name}: slurmpast reports an OOM kill, so the peak is a floor")
             else:
                 notes.append(f"{name}: no usable memory reading in slurmpast ({observed!r})")
         elif flag == "--cpus-per-task":
@@ -310,7 +310,7 @@ def from_sacct(workload: str, runner: Runner, *, since: str = DEFAULT_SINCE,
               if o.mem_peak_bytes or o.cores_used is not None or o.elapsed_seconds]
     if not usable:
         return (f"sacct lists {len(observations)} run(s) of {workload!r} with every resource field "
-                "empty — JobAcctGatherType is off")
+                "empty: JobAcctGatherType is off")
     notes = []
     if not any(o.mem_peak_bytes for o in usable):
         notes.append("sacct returned no MaxRSS on any run or step: memory accounting is not "

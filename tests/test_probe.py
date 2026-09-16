@@ -46,7 +46,7 @@ def test_the_remedy_depends_on_whether_the_user_can_act(monkeypatch):
     runner = FakeRunner().on("show", "config", stdout=STORAGE_OFF)
     monkeypatch.setattr("os.geteuid", lambda: 1000)
     unprivileged = capabilities(runner, which=have_everything)
-    assert "ask RCC" in unprivileged.remedy
+    assert "ask yours" in unprivileged.remedy  # a Slurm admin, not any one site's
     assert "apt install" not in unprivileged.remedy
 
     monkeypatch.setattr("os.geteuid", lambda: 0)

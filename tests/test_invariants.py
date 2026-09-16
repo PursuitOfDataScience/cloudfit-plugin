@@ -185,7 +185,7 @@ def test_no_mcp_json_sits_at_the_repo_root():
 def test_the_declared_versions_agree():
     # plugin.json's `version` is a pin: Claude Code serves installed users whatever
     # content carried the string they already hold, so shipping a change without
-    # bumping it is invisible -- `plugin update` reports "already at the latest".
+    # bumping it is invisible: `plugin update` reports "already at the latest".
     # Three places name the version, and drift between them is silent.
     manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text())
     version = manifest["version"]

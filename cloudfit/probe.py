@@ -1,4 +1,4 @@
-"""What this machine can actually tell you — and what the cloud project is missing.
+"""What this machine can actually tell you, and what the cloud project is missing.
 
 `capabilities()` probes the Slurm side, `doctor()` the GCP side. Both report and
 neither acts: every gap carries the exact argv that would fix it, so the
@@ -120,7 +120,7 @@ def capabilities(runner: Runner | None = None,
         else:
             caps.remedy = (
                 f"accounting off ({', '.join(off)}); using cloudfit's own record instead. "
-                "You cannot change this yourself — ask RCC about "
+                "Changing this needs a Slurm admin; ask yours about "
                 f"{' and '.join(off)}"
             )
 
@@ -133,7 +133,7 @@ def capabilities(runner: Runner | None = None,
          "why": "lists jobs whenever slurmdbd is up, but every resource field is empty "
                 "without JobAcctGatherType"},
         {"source": "record", "available": True,
-         "why": "cloudfit's own JSON record — always available, which is the point"},
+         "why": "cloudfit's own JSON record: always available, which is the point"},
     ]
     if caps.binaries.get("slurmwatch"):
         caps.notes.append(
@@ -183,7 +183,7 @@ def _accounting_permissions(runner: Runner, caps: Capabilities, pairs: dict[str,
 
     if elevated:
         out["remedy"] = (
-            f"AdminLevel={out['admin_level'] or 'coordinator'} — this account can read other "
+            f"AdminLevel={out['admin_level'] or 'coordinator'}: this account can read other "
             "users' accounting. cloudfit still scopes every query to you with -u, so a workload "
             "name shared with another user cannot leak into your fit"
         )
@@ -301,7 +301,7 @@ def doctor(runner: Runner | None = None, *, project: str | None = None,
         limit, usage = row.get("limit"), row.get("usage")
         can_raise = eligible.get(metric, {}).get("quotaIncreaseEligibility", {}).get("isEligible")
         if limit in (0, 0.0):
-            detail = (f"limit 0 — nothing can be launched against {metric} until a request "
+            detail = (f"limit 0, so nothing can be launched against {metric} until a request "
                       "is approved")
             out.findings.append(Finding(
                 f"quota:{metric}", "missing", detail,
@@ -320,7 +320,7 @@ def doctor(runner: Runner | None = None, *, project: str | None = None,
         names = ", ".join(sorted(r.get("name", "?") for r in open_ssh))
         out.findings.append(Finding(
             "firewall", "attention",
-            f"{names} allow tcp from 0.0.0.0/0 — consider IAP-only access instead",
+            f"{names} allow tcp from 0.0.0.0/0; consider IAP-only access instead",
             ["gcloud", "compute", "firewall-rules", "delete", "default-allow-rdp",
              "--project", str(project)]))
     elif rules is not None:
@@ -336,8 +336,8 @@ def doctor(runner: Runner | None = None, *, project: str | None = None,
         if "roles/editor" in roles:
             out.findings.append(Finding(
                 "default-service-account", "attention",
-                f"{default_sa} holds roles/editor on the whole project — enabling the compute API "
-                "creates this silently. Narrow it before launching anything",
+                f"{default_sa} holds roles/editor on the whole project, and enabling the "
+                "compute API creates this silently. Narrow it before launching anything",
                 ["gcloud", "projects", "remove-iam-policy-binding", str(project),
                  f"--member=serviceAccount:{default_sa}", "--role=roles/editor"]))
         elif roles:

@@ -42,7 +42,7 @@ def test_a_gap_page_cache_cannot_explain_is_not_subtracted(cpu_overask_real):
 
     Cache carries under 4% of the gap, so the rest is an earlier phase's
     anonymous memory, since freed. A live sample's working set is one instant,
-    not a peak -- sizing `--mem` to it would OOM the next run.
+    not a peak, and sizing `--mem` to it would OOM the next run.
     """
     obs = observation_from_slurmwatch(cpu_overask_real)
     assert obs.mem_peak_bytes == 13303283712

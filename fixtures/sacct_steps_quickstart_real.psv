@@ -1,5 +1,5 @@
 # real: sacct -P -n --format=JobID,JobName,Partition,State,AllocCPUS,ReqMem,MaxRSS,TotalCPU,Elapsed,Timelimit,AllocTRES --name=caai-quickstart (captured 2026-09-15)
-# note: MaxRSS is blank on the job row and only present on .batch/.extern steps -- this is why -X alone is not enough.
+# note: MaxRSS is blank on the job row and only present on .batch/.extern steps, which is why -X alone is not enough.
 53421112|caai-quickstart|test|COMPLETED|4|48Gn||00:43.741|00:00:43|01:00:00|billing=4,cpu=4,mem=48G,node=1
 53421112.batch|batch||COMPLETED|4|48Gn|3424844K|00:43.740|00:00:43||cpu=4,mem=48G,node=1
 53421112.extern|extern||COMPLETED|4|48Gn|1944K|00:00:00|00:00:43||billing=4,cpu=4,mem=48G,node=1

@@ -49,7 +49,7 @@ def _stage_records(tmp_path_factory):
 def test_n_zero_refuses_instead_of_inventing():
     result = fit([])
     assert result.refused
-    assert "submit it once first" in result.refusals[0]
+    assert "Submit it once first" in result.refusals[0]
     assert result.sbatch_block == ""
 
 
