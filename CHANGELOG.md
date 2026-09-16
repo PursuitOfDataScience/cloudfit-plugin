@@ -16,7 +16,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
   in the skill; it now says there is nothing to configure and shows the sentence you type
   when it guesses wrong. The tool table said "the four axes", "telemetry sources" and
   "slurmpast to sacct to its own record", and now says what each tool answers. The line under
-  the chart no longer leans on `n=0`.
+  the chart no longer leans on `n=0`. The warning box is gone too: it put a hazard sign over
+  two things that are not hazards, in words ("squat a GPU node", "slurmdbd", "n=0 and
+  refuse") that only mean something to whoever wrote them. The hook is a feature, so it sits
+  with the tools now; needing one run before a fit is a setup step, so it sits in setup.
 
 ## [0.2.2] - 2026-09-16
 

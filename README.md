@@ -34,9 +34,12 @@ claude plugin marketplace add PursuitOfDataScience/cloudfit-plugin
 claude plugin install cloudfit@cloudfit-plugin
 ```
 
-**3.** Fit something: `/fit <job-id>` or `/fit job.sbatch`.
+There is no `pip install` step: the server installs what it needs, into its own venv, the
+first time it starts.
 
-No `pip install` step. The server installs what it needs, into its own venv, on first start.
+**3.** Fit something: `/fit <job-id>` or `/fit job.sbatch`. Brand new job? Run it once first.
+cloudfit fits from measurements, so it would rather refuse than invent a number for a job
+nobody has ever run.
 
 ## 🧰 What you get
 
@@ -51,7 +54,8 @@ No `pip install` step. The server installs what it needs, into its own venv, on 
 | 📮 `submit` | submits it, and keeps CPU jobs off GPU nodes |
 | ☁️ `doctor` | whether your GCP project is ready, and the fix for each gap |
 
-A `PreToolUse` hook runs the same checks on `sbatch` and `gcloud` commands you type yourself.
+It also watches the commands *you* type. An `sbatch` that would park a CPU job on a GPU node,
+or a cloud VM with no shutdown time on it, gets stopped with the reason before it runs.
 
 ## 🧭 It works on your cluster, not mine
 
@@ -61,13 +65,6 @@ uses and goes from there.
 Guessed wrong? Say so in plain English and it remembers:
 
 > *"default to the bigmem partition, and never send anything to gpu-preempt"*
-
-## ⚠️ Gotchas
-
-- **The hook will stop you.** An `sbatch` that would squat a GPU node, or a `gcloud` VM with
-  no `--max-run-duration`, gets denied before it runs.
-- **No `slurmdbd`, no history.** Without Slurm accounting, cloudfit only knows the runs it
-  measured itself, so the first `/fit` of a workload will say `n=0` and refuse.
 
 <div align="center">
 
