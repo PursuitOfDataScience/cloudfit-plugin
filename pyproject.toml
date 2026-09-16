@@ -2,7 +2,7 @@
 # Claude Code plugin, not a package, and nothing here is meant to be installable.
 [project]
 name = "cloudfit"
-version = "0.1.1"
+version = "0.1.2"
 description = "Fit a Slurm job to what it actually used."
 requires-python = ">=3.10"
 # mcp 2.x renamed FastMCP to MCPServer, so server.py's import fails there and the

@@ -101,6 +101,11 @@ def read_record(workload: str | None, *, directory: str | os.PathLike | None = N
             continue
         if workload and workload_key(row.get("workload")) != key:
             continue
+        if "mem_peak_is_lifetime" not in row and row.get("mem_peak_source") == "cgroup":
+            # Written before 0.1.2 recorded the flag. cgroup `memory.peak` is a
+            # kernel high-watermark by definition, so a row sourced from it gets
+            # the safe reading rather than being sized to a sampled instant.
+            row["mem_peak_is_lifetime"] = True
         out.append(Observation(**{k: v for k, v in row.items() if k in fields}))
     return out
 

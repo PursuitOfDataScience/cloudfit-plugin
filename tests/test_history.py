@@ -179,3 +179,34 @@ def test_the_chain_passes_the_user_through_to_both_slurm_sources():
     runner = FakeRunner().on("slurmpast", stdout='{"workloads": []}').on("sacct", stdout="")
     history("nope", runner=runner, user="someone-else")
     assert all("someone-else" in " ".join(c) for c in runner.calls)
+
+
+def test_a_legacy_cgroup_row_is_not_sized_to_a_sampled_instant(tmp_path):
+    """Records written before 0.1.2 carry no `mem_peak_is_lifetime`.
+
+    Without the migration such a row sizes `--mem` to the working set at the
+    moment of sampling -- the very reading 0.1.2 stopped trusting.
+    """
+    row = {
+        "source": "slurmwatch", "kind": "sample", "workload": "linalg",
+        "mem_peak_bytes": 2040109465, "mem_peak_working_set_bytes": 322122547,
+        "mem_cache_bytes": 21474836, "mem_cache_measured": True,
+        "mem_peak_source": "cgroup",
+    }
+    (tmp_path / "history.jsonl").write_text(json.dumps(row) + "\n")
+    (obs,) = read_record("linalg", directory=tmp_path)
+    assert obs.mem_peak_is_lifetime
+    assert obs.mem_peak_trusted_bytes == 2040109465
+    assert obs.mem_peak_basis == "watermark"
+
+
+def test_a_legacy_sacct_row_keeps_its_own_reading(tmp_path):
+    """Only cgroup rows get the inference: MaxRSS is not a kernel watermark."""
+    row = {
+        "source": "sacct", "kind": "final", "workload": "linalg",
+        "mem_peak_bytes": 4000000000, "mem_peak_source": "sacct MaxRSS",
+    }
+    (tmp_path / "history.jsonl").write_text(json.dumps(row) + "\n")
+    (obs,) = read_record("linalg", directory=tmp_path)
+    assert not obs.mem_peak_is_lifetime
+    assert obs.mem_peak_trusted_bytes == 4000000000

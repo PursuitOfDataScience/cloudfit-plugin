@@ -179,11 +179,23 @@ def _memory(observations, request, ceiling) -> tuple[Directive | None, list[str]
         worst = max(disagreeing, key=lambda o: (o.mem_peak_bytes or 0))
         warnings.append(
             f"memory.peak {fmt_gib(worst.mem_peak_bytes)} vs anonymous working set "
-            f"{fmt_gib(worst.mem_peak_working_set_bytes)} on job {worst.job_id}: the difference is "
-            "reclaimable page cache (Arrow-backed datasets inflate it badly). Sized to the working "
+            f"{fmt_gib(worst.mem_peak_working_set_bytes)} on job {worst.job_id}, and the "
+            f"{fmt_gib(worst.mem_cache_bytes)} of reclaimable page cache measured alongside it "
+            "accounts for the gap (Arrow-backed datasets inflate it badly). Sized to the working "
             "set, which is the OOM-relevant number — not to the larger figure."
         )
         reason += "; page cache excluded"
+
+    understating = [o for o in observations if o.mem_peak_understates]
+    if understating:
+        worst = max(understating, key=lambda o: (o.mem_peak_bytes or 0))
+        warnings.append(
+            f"job {worst.job_id} read a {fmt_gib(worst.mem_peak_working_set_bytes)} working set "
+            f"against a {fmt_gib(worst.mem_peak_bytes)} cgroup watermark, and the measured page "
+            "cache does not account for the gap — an earlier phase held more and freed it. A live "
+            "sample's working set is one instant, not a peak, so this is sized to the watermark."
+        )
+        reason += "; sized to the cgroup lifetime watermark, not the sampled working set"
 
     direction = _direction(recommended_gib * GIB, current)
     if current and recommended_gib * GIB < current:

@@ -54,7 +54,9 @@ class Observation:
     mem_limit_bytes: int | None = None
     mem_peak_bytes: int | None = None
     mem_peak_working_set_bytes: int | None = None
+    mem_cache_bytes: int | None = None
     mem_cache_measured: bool = False
+    mem_peak_is_lifetime: bool = False  # cgroup memory.peak is a kernel high-watermark
     mem_peak_source: str | None = None
     gpu_count: int = 0
     gpu_hbm_percent: float | None = None
@@ -67,29 +69,71 @@ class Observation:
     runs: int = 1  # >1 only for a rollup
 
     @property
+    def mem_peak_basis(self) -> str:
+        """Which figure `mem_peak_trusted_bytes` came from, so a reason can say it."""
+        if self.mem_peak_trusted_bytes is None:
+            return "none"
+        if self.mem_peak_trusted_bytes == self.mem_peak_working_set_bytes:
+            return "working set"
+        return "watermark"
+
+    @property
     def mem_peak_trusted_bytes(self) -> int | None:
-        """The OOM-relevant peak.
+        """The OOM-relevant peak -- and never below a figure that is a real peak.
 
         `memory.peak` / MaxRSS count reclaimable page cache, which Arrow-backed
-        datasets inflate badly; when the cache was measured separately the
-        anonymous working set is the number a `--mem` request has to cover.
+        datasets inflate badly, so the anonymous working set is the tighter
+        number -- but only where it is itself a peak over the run.
+
+        A live `slurmwatch --once` snapshot has no history behind it: its
+        `peak_working_set_bytes` is that instant's anonymous set. A job that
+        frees one phase's arrays before the next reads far below its own high
+        mark, so sizing `--mem` to it would OOM the next run. Where the cgroup
+        watermark is a lifetime figure and the working set is an instant, the
+        watermark is the floor.
         """
         ws = self.mem_peak_working_set_bytes
-        if self.mem_cache_measured and ws is not None:
-            return ws
-        return self.mem_peak_bytes
+        if ws is None or not self.mem_cache_measured:
+            return self.mem_peak_bytes
+        if self.mem_disagrees:
+            return ws  # the measured cache accounts for the gap, so subtract it
+        if self.kind == "sample" and self.mem_peak_is_lifetime:
+            return self.mem_peak_bytes
+        return ws
 
     @property
     def mem_disagrees(self) -> bool:
+        """True only where the measured cache actually accounts for the gap.
+
+        The old test -- any gap wider than 25% -- fired on every phased job,
+        then blamed page cache for what was really an earlier phase's freed
+        arrays. Cache has to carry at least half the gap to be named for it.
+        """
         ws = self.mem_peak_working_set_bytes
-        if not self.mem_cache_measured or ws is None or not self.mem_peak_bytes:
+        peak = self.mem_peak_bytes
+        if not self.mem_cache_measured or ws is None or not peak:
             return False
-        return self.mem_peak_bytes > 1.25 * max(ws, 1)
+        gap = peak - 1.25 * max(ws, 1)
+        if gap <= 0:
+            return False
+        cache = self.mem_cache_bytes
+        return cache is not None and cache >= 0.5 * (peak - max(ws, 1))
+
+    @property
+    def mem_peak_understates(self) -> bool:
+        """A live working set far under the watermark: phases, not page cache."""
+        ws = self.mem_peak_working_set_bytes
+        peak = self.mem_peak_bytes
+        if ws is None or not peak or self.mem_disagrees:
+            return False
+        return self.mem_peak_basis == "watermark" and peak > 1.25 * max(ws, 1)
 
     def as_dict(self) -> dict:
         d = asdict(self)
         d["mem_peak_trusted_bytes"] = self.mem_peak_trusted_bytes
+        d["mem_peak_basis"] = self.mem_peak_basis
         d["mem_disagrees"] = self.mem_disagrees
+        d["mem_peak_understates"] = self.mem_peak_understates
         return d
 
 

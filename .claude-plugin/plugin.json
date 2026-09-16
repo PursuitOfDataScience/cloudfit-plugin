@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "cloudfit",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Fits Slurm jobs to what they actually used: trims the CPU and RAM you over-asked for, drives the GPU you under-used, and states the sample size behind every number.",
   "author": {
     "name": "Youzhi Yu",

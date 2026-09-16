@@ -28,18 +28,46 @@ def test_real_cpu_snapshot_normalises_to_the_four_axes(cpu_overask_real):
     assert obs.cores_basis == "peak"
 
 
-def test_page_cache_is_excluded_from_the_trusted_peak(cpu_overask_real):
+def test_page_cache_is_excluded_when_the_cache_reading_explains_the_gap(arrow_pagecache):
+    """52.2 GiB of measured cache against a 52.2 GiB gap: subtract it."""
+    obs = observation_from_slurmwatch(arrow_pagecache)
+    assert obs.mem_disagrees
+    assert not obs.mem_peak_understates
+    assert obs.mem_peak_trusted_bytes == int(9.3 * GIB)
+    assert obs.mem_peak_basis == "working set"
+
+
+def test_a_gap_page_cache_cannot_explain_is_not_subtracted(cpu_overask_real):
+    """Real capture: 12.4 GiB watermark, 0.17 GiB working set, 0.46 GiB of cache.
+
+    Cache carries under 4% of the gap, so the rest is an earlier phase's
+    anonymous memory, since freed. A live sample's working set is one instant,
+    not a peak -- sizing `--mem` to it would OOM the next run.
+    """
     obs = observation_from_slurmwatch(cpu_overask_real)
     assert obs.mem_peak_bytes == 13303283712
     assert obs.mem_peak_working_set_bytes == 184025088
-    assert obs.mem_peak_trusted_bytes == 184025088
-    assert obs.mem_disagrees
+    assert obs.mem_peak_trusted_bytes == 13303283712
+    assert obs.mem_peak_basis == "watermark"
+    assert not obs.mem_disagrees
+    assert obs.mem_peak_understates
 
 
-def test_uncached_memory_reading_is_taken_as_given(arrow_pagecache):
-    obs = observation_from_slurmwatch(arrow_pagecache)
-    assert obs.mem_disagrees
-    assert obs.mem_peak_trusted_bytes == int(9.3 * GIB)
+def test_a_late_sample_does_not_size_below_an_earlier_phase(cpu_overask_real):
+    """The phased-job regression: one late snapshot must not undercut the run.
+
+    Sampled after the heavy phase frees its arrays, the working set reads
+    ~1.4% of the watermark. The fit has to hold the watermark anyway.
+    """
+    late = observation_from_slurmwatch(cpu_overask_real)
+    assert late.mem_peak_working_set_bytes < 0.02 * late.mem_peak_bytes
+    assert late.mem_peak_trusted_bytes == late.mem_peak_bytes
+
+
+def test_cache_and_lifetime_fields_are_carried_through(cpu_overask_real):
+    obs = observation_from_slurmwatch(cpu_overask_real)
+    assert obs.mem_cache_bytes == 493633536
+    assert obs.mem_peak_is_lifetime
 
 
 def test_fullest_card_drives_the_gpu_axes(gpu_pair_uneven):

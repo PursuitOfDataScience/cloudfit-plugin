@@ -9,6 +9,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-16
+
+### Fixed
+
+- `--mem` no longer sizes below a peak the job actually reached. `mem_peak_trusted_bytes`
+  preferred `slurmwatch`'s `peak_working_set_bytes` whenever the page cache had been measured
+  separately, but a `--once` snapshot has no history behind it: that field is the anonymous set
+  at the instant of sampling, not a peak over the run. A phased job that frees one stage's
+  arrays before the next reads far under its own high mark, so a late sample recommended a
+  `--mem` the job would OOM against. Measured on GCP: a six-phase linear-algebra run held
+  1.88 GiB during a 9000x9000 GEMM, then read 0.09 GiB three phases later while the cgroup
+  watermark stayed at 1.90 GiB throughout — the old rule would have said `--mem=1G`. The
+  cgroup watermark is now the floor unless the cache reading genuinely accounts for the gap.
+  The repo's own `slurmwatch_cpu_overask_real.json` fixture already carried the evidence:
+  12.4 GiB watermark, 0.17 GiB working set, and only 0.46 GiB of cache to explain it.
+- The page-cache exclusion now has to earn its name. `mem_disagrees` fired on any gap wider
+  than 25%, then blamed reclaimable page cache for what was usually an earlier phase's freed
+  anonymous memory — it reported "the difference is reclaimable page cache" for a 1.6 GiB gap
+  measured alongside 16 MB of cache. Cache must now carry at least half the gap. The Arrow
+  case the exclusion exists for is unchanged: 52 GiB of measured cache against a 52 GiB gap
+  still comes off, and still sizes to the 9.3 GiB anonymous set.
+
+### Added
+
+- `mem_peak_basis`, `mem_peak_understates`, `mem_cache_bytes` and `mem_peak_is_lifetime` on
+  `Observation`, so a `--mem` reason can say which figure it sized to and why.
+- GitHub Actions: `ci` (ruff, pytest on 3.10-3.13, an import of the MCP server against the
+  pinned `mcp` range, and `claude plugin validate --strict`) and `release`, which refuses a
+  `v*` tag that disagrees with `plugin.json` and cuts notes from this file.
+- `tests/test_manifest.py` — the install surface is checked by the suite rather than by CI
+  yaml, so a missing skill path or a dropped `mcp` ceiling fails locally first.
+
+
 ## [0.1.1] - 2026-09-16
 
 ### Fixed

@@ -1,0 +1,51 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: the tag has to match the version in plugin.json
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          tag = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+          have = json.loads(pathlib.Path(".claude-plugin/plugin.json").read_text())["version"]
+          assert tag == have, f"tag {tag!r} does not match plugin.json {have!r}"
+          print(f"tag and manifest agree on {have}")
+          PY
+
+      - run: pip install ruff pytest "mcp>=1.28,<2"
+      - run: ruff check .
+      - run: python -m pytest -q
+
+      - name: notes for this version, straight out of the changelog
+        run: |
+          python - <<'PY'
+          import os, pathlib, re
+          version = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+          text = pathlib.Path("CHANGELOG.md").read_text()
+          # The section for this version, up to the next heading at the same level.
+          match = re.search(
+              rf"^(#+)\s*\[?{re.escape(version)}\]?.*?$(.*?)(?=^\1\s|\Z)",
+              text, re.M | re.S)
+          body = (match.group(2).strip() if match else "").strip()
+          pathlib.Path("NOTES.md").write_text(body or f"cloudfit {version}")
+          print(body[:400] or "(no changelog section; wrote a bare title)")
+          PY
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: NOTES.md
+          name: cloudfit ${{ github.ref_name }}

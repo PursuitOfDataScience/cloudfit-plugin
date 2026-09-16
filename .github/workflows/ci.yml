@@ -1,0 +1,71 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check .
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      # mcp is needed to collect tests/test_server.py, not just to run the server.
+      - run: pip install pytest "mcp>=1.28,<2"
+      # No cluster and no cloud: every test runs off the recorded fixtures.
+      - run: python -m pytest -q
+
+  server:
+    # The documented failure mode: on mcp 2.x the FastMCP import dies and Claude
+    # Code reports only "Connection closed". Prove the pinned range still loads.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "mcp>=1.28,<2"
+      - name: the server imports and registers its seven tools
+        run: |
+          python - <<'PY'
+          import cloudfit.server as s
+          tools = ("capabilities", "measure", "history", "fit", "check", "submit", "doctor")
+          missing = [t for t in tools if not callable(getattr(s, t, None))]
+          assert not missing, f"tools missing from the server: {missing}"
+          print(f"server imports; {len(tools)} tools present")
+          PY
+
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: claude plugin validate . --strict

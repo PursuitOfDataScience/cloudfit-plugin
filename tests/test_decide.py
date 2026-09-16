@@ -100,11 +100,21 @@ def test_a_rollup_cannot_claim_agreement():
 
 
 def test_memory_comes_down_on_a_real_over_ask(cpu_overask_real):
+    """49 GiB asked, 12.4 GiB watermark: cut hard, but not below the watermark."""
     result = fit([observation_from_slurmwatch(cpu_overask_real)])
     memory = axis(result, "memory")
     assert memory.direction == "down"
     assert memory.current == "49.0 GiB"
-    assert memory.recommended == "1G"
+    assert memory.recommended == "18G"  # ceil(1.4 x 12.4 GiB)
+    assert any("does not account for the gap" in w for w in result.warnings)
+
+
+def test_page_cache_still_comes_off_when_the_cache_reading_carries_the_gap(arrow_pagecache):
+    """The Arrow case the exclusion exists for: 96 GiB asked, 9.3 GiB anonymous."""
+    result = fit([observation_from_slurmwatch(arrow_pagecache)])
+    memory = axis(result, "memory")
+    assert memory.direction == "down"
+    assert memory.recommended == "14G"  # ceil(1.4 x 9.3 GiB)
     assert any("reclaimable page cache" in w for w in result.warnings)
 
 
