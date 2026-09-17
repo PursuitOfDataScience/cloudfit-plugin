@@ -89,3 +89,18 @@ def record_home(tmp_path, monkeypatch):
     """Point the own record at a tmp dir, never at the user's config."""
     monkeypatch.setenv("CLOUDFIT_HOME", str(tmp_path / "record"))
     return tmp_path / "record"
+
+
+# Setting the CLOUDFIT_* vars is the documented way for a site to tell cloudfit what
+# its cluster is called, so a developer who has configured their own machine is the
+# expected case, not an odd one. Left in place they reach site_facts() and the
+# discovery tests measure the developer's cluster instead of the fixture's.
+SITE_ENV = ("CLOUDFIT_DEFAULT_PARTITION", "CLOUDFIT_DEFAULT_ACCOUNT",
+            "CLOUDFIT_DISCOURAGED_PARTITIONS", "CLOUDFIT_GCP_PROJECT")
+
+
+@pytest.fixture(autouse=True)
+def _no_site_env_from_the_developers_machine(monkeypatch):
+    """Every test starts with the site env unset; the ones testing it set it themselves."""
+    for name in SITE_ENV:
+        monkeypatch.delenv(name, raising=False)

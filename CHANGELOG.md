@@ -9,6 +9,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+### Fixed
+
+- The site-discovery tests read the real environment, so on a machine with the `CLOUDFIT_*`
+  vars set they measured that cluster instead of the fixture's and three of them failed.
+  Setting those vars is the documented way to tell cloudfit what a cluster is called, which
+  made the expected case the broken one, and CI stayed green only because it never sets them.
+  `conftest.py` now clears the four of them for every test; the one test that exercises the
+  env layer sets them itself, as it always did.
+
 ### Changed
 
 - The README says what the reader gets, not how it is built. The cluster section listed three
