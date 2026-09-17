@@ -21,10 +21,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
   that is not about sizing. Measured against a no-plugin baseline, the guardrails are where
   the plugin earns its slot and the arithmetic is not: the GPU-placement case scores 1.00
   with the plugin and 0.00 without it.
-- `.github/workflows/evals.yml`, on `workflow_dispatch` and a published release only. Every
-  case starts a real Claude child and a judge model reads its reply, so a pass costs a couple
-  of dollars, takes minutes, and returns a sample rather than a measurement. It is the wrong
-  shape for a push gate and it skips itself when the repository has no API key.
+- `.github/workflows/evals.yml`, on a push or pull request that touches the prose the suite
+  actually tests (`skills/`, `commands/`, `agents/`, the tool descriptions in `server.py`,
+  the manifest, the cases) and on `workflow_dispatch`. Every case starts a real Claude child
+  and a judge model reads its reply, so a pass costs a couple of dollars, takes minutes, and
+  returns a sample rather than a measurement: too expensive for every push, and pointless on
+  a commit that cannot move a score. It skips itself when the repository has no API key, so
+  a fork's pull request does not read as a failing suite.
 
 ### Fixed
 

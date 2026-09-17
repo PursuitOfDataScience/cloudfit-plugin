@@ -1,18 +1,47 @@
 name: evals
 
-# Not part of the push gate. Every case starts a real Claude child and a judge model
-# scores its reply, so a full pass costs a couple of dollars and takes minutes, and a
-# score is a sample rather than a measurement. Run it when the prose changes: on a
-# release, or by hand.
+# Every case starts a real Claude child and a judge model scores its reply, so a full
+# pass costs a couple of dollars, takes minutes, and returns a sample rather than a
+# measurement. That rules out running it on every push. It does not rule out running it
+# when the thing it actually tests changes.
+#
+# What it tests is the prose: the skill, the command, the agent brief, the MCP tool
+# descriptions the model reads out of server.py, and the manifest that registers them.
+# Nothing else can move a score. Four of this repo's first sixteen commits touched that
+# surface, so the paths filter is the difference between "caught when it lands" and
+# "caught whenever somebody remembers".
+#
+# The paths list is duplicated because Actions does not resolve YAML anchors. There is
+# deliberately no release arm: the filter below already runs the suite when the prose
+# changes, and a tag over an unchanged tree would only re-sample the noise. A tags
+# filter here would also have been a trap, since `tags` and `paths` in one push block
+# both have to match, which quietly means never.
 on:
+  pull_request:
+    paths:
+      - "skills/**"
+      - "commands/**"
+      - "agents/**"
+      - "cloudfit/server.py"
+      - ".claude-plugin/plugin.json"
+      - "evals/**"
+      - ".github/workflows/evals.yml"
+  push:
+    branches: [main]
+    paths:
+      - "skills/**"
+      - "commands/**"
+      - "agents/**"
+      - "cloudfit/server.py"
+      - ".claude-plugin/plugin.json"
+      - "evals/**"
+      - ".github/workflows/evals.yml"
   workflow_dispatch:
     inputs:
       case:
         description: "case name glob (empty runs all of them)"
         required: false
         default: ""
-  release:
-    types: [published]
 
 permissions:
   contents: read
@@ -27,8 +56,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # No key, no run. A fork's PR and a clone without the secret both land here,
-      # and neither should look like a failing suite.
+      # No key, no run. A fork's pull request gets no secrets, and a clone without the
+      # secret should not look like a failing suite.
       - name: skip without a credential
         id: gate
         env:
@@ -48,11 +77,11 @@ jobs:
       - run: npm install -g @anthropic-ai/claude-code
         if: steps.gate.outputs.run == 'yes'
 
-      # --mocks record (the default) keeps the real MCP server out of it, so nothing
-      # here needs slurmwatch, sacct or a cluster. --ablation none because the
-      # no-plugin delta is a design question for a human, not a merge gate.
-      # --threshold 0.7 gates on a regression rather than on judge noise: one flipped
-      # vote on a weight-2 grader already costs a case 0.33.
+      # --mocks record (the default) keeps the real MCP server out of it, so nothing here
+      # needs slurmwatch, sacct or a cluster. --ablation none because the no-plugin delta
+      # is a design question for a human, not a merge gate. --threshold 0.7 gates on a
+      # regression rather than on judge noise: one flipped vote on a weight-2 grader
+      # already costs a case 0.33, and three runs do not average that away.
       - name: score the suite
         if: steps.gate.outputs.run == 'yes'
         env:
@@ -68,6 +97,8 @@ jobs:
             --json evals-result.json \
             ${{ github.event.inputs.case && format('--case {0}', github.event.inputs.case) || '' }}
 
+      # The report is the useful part of a failure: it carries the reply that scored and
+      # the judge's reasoning per grader, which the log summary does not.
       - uses: actions/upload-artifact@v4
         if: always() && steps.gate.outputs.run == 'yes'
         with:
