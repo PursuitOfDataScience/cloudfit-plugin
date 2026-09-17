@@ -9,6 +9,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+### Added
+
+- An eval suite under `evals/`: seven cases for `claude plugin eval`, plus the mocks that
+  let them run with no cluster and no cloud. None of them tests the sizing arithmetic, which
+  `test_decide.py` already pins from the recorded fixtures far more cheaply than a model
+  could. They test the layer no assertion reaches, which is what the skill's prose makes an
+  agent do with what the tools return: relay a refusal at `n=0` instead of supplying a
+  number, call one observation a guess, read the site rather than editing a number to get
+  past a guard, carry the GPU-node exclusion through to submit, and stay quiet on a question
+  that is not about sizing. Measured against a no-plugin baseline, the guardrails are where
+  the plugin earns its slot and the arithmetic is not: the GPU-placement case scores 1.00
+  with the plugin and 0.00 without it.
+- `.github/workflows/evals.yml`, on `workflow_dispatch` and a published release only. Every
+  case starts a real Claude child and a judge model reads its reply, so a pass costs a couple
+  of dollars, takes minutes, and returns a sample rather than a measurement. It is the wrong
+  shape for a push gate and it skips itself when the repository has no API key.
+
 ### Fixed
 
 - The site-discovery tests read the real environment, so on a machine with the `CLOUDFIT_*`

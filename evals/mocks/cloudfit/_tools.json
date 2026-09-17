@@ -1,0 +1,257 @@
+{
+  "tools": [
+    {
+      "name": "site",
+      "description": "What this cluster calls things, and how to correct cloudfit when it guesses wrong.\n\n    Called with no arguments it only reports: the default partition `sinfo`\n    marks with `*`, every partition, and the accounts this user is associated\n    with. cloudfit ships no partition or account names of its own, so this is\n    the whole of what it knows about where it is running.\n\n    Pass any argument to adapt it on the spot; add `save=True` to write the\n    profile so later sessions and the submit hook start from it too.\n    ",
+      "inputSchema": {
+        "properties": {
+          "default_partition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Default Partition"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Account"
+          },
+          "discouraged_partitions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Discouraged Partitions"
+          },
+          "save": {
+            "default": false,
+            "title": "Save",
+            "type": "boolean"
+          }
+        },
+        "title": "siteArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "capabilities",
+      "description": "Which telemetry sources exist on this machine, and how to fix the gaps.",
+      "inputSchema": {
+        "properties": {},
+        "title": "capabilitiesArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "measure",
+      "description": "The four axes for a running job, now, from slurmwatch.\n\n    Records the snapshot so history exists even where Slurm accounting is off.\n    ",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "record": {
+            "default": true,
+            "title": "Record",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "title": "measureArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "history",
+      "description": "Past runs of a workload: slurmpast, else sacct, else cloudfit's own record.",
+      "inputSchema": {
+        "properties": {
+          "workload": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Workload"
+          },
+          "script_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script Path"
+          },
+          "since": {
+            "default": "now-30days",
+            "title": "Since",
+            "type": "string"
+          }
+        },
+        "title": "historyArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "fit",
+      "description": "What the job should have asked for: a corrected #SBATCH block, with confidence.\n\n    Give a job id to fit from live telemetry, a script to fit from its past runs,\n    or both to use both.\n    ",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Job Id"
+          },
+          "script_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script Path"
+          },
+          "script": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script"
+          },
+          "since": {
+            "default": "now-30days",
+            "title": "Since",
+            "type": "string"
+          }
+        },
+        "title": "fitArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "check",
+      "description": "Pre-submit lint against the live partition: refuses what the scheduler would.",
+      "inputSchema": {
+        "properties": {
+          "script_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script Path"
+          },
+          "script": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Script"
+          }
+        },
+        "title": "checkArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "submit",
+      "description": "Submit a checked script, generating --exclude for GPU nodes and verifying it took.",
+      "inputSchema": {
+        "properties": {
+          "script_path": {
+            "title": "Script Path",
+            "type": "string"
+          },
+          "dry_run": {
+            "default": false,
+            "title": "Dry Run",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "script_path"
+        ],
+        "title": "submitArguments",
+        "type": "object"
+      }
+    },
+    {
+      "name": "doctor",
+      "description": "Read-only GCP readiness: what is configured, what is missing, what would fix it.",
+      "inputSchema": {
+        "properties": {
+          "project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Project"
+          }
+        },
+        "title": "doctorArguments",
+        "type": "object"
+      }
+    }
+  ]
+}

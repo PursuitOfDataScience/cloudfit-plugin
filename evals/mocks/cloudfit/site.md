@@ -1,0 +1,11 @@
+{"default_partition": "compute",
+ "partitions": ["compute", "gpu", "build"],
+ "user_default_account": "pi-example",
+ "accounts": ["pi-example", "rcc-staff"],
+ "account_lookup_ok": true,
+ "suggested_account": null,
+ "discouraged_partitions": [],
+ "configured": {},
+ "source": {"default_partition": "sinfo", "accounts": "sacctmgr"},
+ "profile_path": "site.json",
+ "saved": false}
