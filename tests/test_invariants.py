@@ -64,6 +64,8 @@ def test_nothing_writes_to_the_user_config():
 
 READ_ONLY_GCLOUD = {("config", "get-value"), ("services", "list"), ("compute", "project-info"),
                     ("compute", "firewall-rules"), ("quotas", "info"), ("projects", "get-iam-policy")}
+# The command group alone cannot tell `firewall-rules list` from `firewall-rules delete`.
+READ_ONLY_VERBS = {"list", "describe", "get-value", "get-iam-policy"}
 
 
 def _gcloud_argv_literals(tree) -> list[tuple[list[str], bool]]:
@@ -92,6 +94,7 @@ def test_doctor_only_ever_runs_read_only_gcloud_verbs():
             continue
         verb = tuple(w for w in words[1:3] if not w.startswith("-"))
         assert verb in READ_ONLY_GCLOUD, words
+        assert READ_ONLY_VERBS & set(words[1:4]), words
 
 
 def test_no_other_module_builds_a_gcloud_command():
@@ -205,6 +208,11 @@ def test_the_declared_versions_agree():
     assert released, "CHANGELOG.md has no released version heading"
     assert released[0] == version, f"CHANGELOG.md newest entry is {released[0]}"
 
+    # The fourth place, and the one that had drifted: it said 0.1.0 through three releases.
+    import cloudfit
+
+    assert cloudfit.__version__ == version, "cloudfit/__init__.py __version__ disagrees"
+
 
 def test_the_mcp_dependency_excludes_the_two_line():
     # server.py imports mcp.server.fastmcp, which mcp 2.x renamed to MCPServer.
@@ -215,6 +223,32 @@ def test_the_mcp_dependency_excludes_the_two_line():
     assert spec, "pyproject declares no mcp dependency"
     assert "<2" in spec.group(1), spec.group(1)
     assert "mcp.server.fastmcp" in (PACKAGE / "server.py").read_text()
+
+
+TEXT_SUFFIXES = {".py", ".md", ".json", ".jsonl", ".yml", ".yaml", ".toml", ".txt", ".psv",
+                 ".sh", ""}
+NOT_OURS = {".git", "__pycache__", ".pytest_cache", ".ruff_cache", ".cloudfit", "results"}
+
+
+EM_DASH = chr(0x2014)
+EM_DASH_ESCAPED = "\\" + "u2014"  # spelled in two halves so this file does not match itself
+
+
+def test_no_em_dash_anywhere_in_the_repo():
+    """Including its JSON escape, which renders as the character all the same.
+
+    marketplace.json carried one through the 0.2.2 sweep, which searched for the
+    character and so never saw the six ASCII bytes that spell it.
+    """
+    for path in ROOT.rglob("*"):
+        if not path.is_file() or NOT_OURS & set(path.relative_to(ROOT).parts):
+            continue
+        if path.suffix not in TEXT_SUFFIXES:
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        rel = path.relative_to(ROOT)
+        assert EM_DASH not in text, f"{rel} has an em-dash"
+        assert EM_DASH_ESCAPED not in text.lower(), f"{rel} has an escaped em-dash"
 
 
 def test_the_hook_never_exits_two():

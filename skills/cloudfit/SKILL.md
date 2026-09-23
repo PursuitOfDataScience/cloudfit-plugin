@@ -1,6 +1,6 @@
 ---
 name: cloudfit
-description: Rules for sizing Slurm jobs from measured telemetry - cutting over-requested cores, RAM and walltime while driving an under-used GPU up. Use when asked to right-size, fit, or fix the resources of a job or sbatch script, when a job is wasting a GPU, or when submitting to a billed partition.
+description: Rules for sizing Slurm jobs from measured telemetry, cutting over-requested cores, RAM and walltime while driving an under-used GPU up. Use when asked to right-size, fit, or fix the resources of a job or sbatch script, when a job is wasting a GPU, or when submitting to a billed partition.
 ---
 
 # Sizing rules
@@ -15,7 +15,8 @@ The `cloudfit` MCP tools enforce all of this. These are the rules, not the enfor
   Never work around a guard by editing the number it complained about.
 
 ## Fit both directions in one pass
-- Cut `--cpus-per-task` to `ceil(1.3 x peak effective cores)`.
+- Cut `--cpus-per-task` to `ceil(1.3 x peak effective cores)`, per task: four tasks on a node
+  share its peak, so split it before sizing the flag.
 - Cut `--mem` to `ceil(1.4 x peak)`. Never pad to a round number.
 - Cut `--time` to `1.25 x longest completed run`.
 - Raise the GPU knobs (batch size, K, sequence length, KV-cache) until HBM sits near 90%.
@@ -27,6 +28,7 @@ The `cloudfit` MCP tools enforce all of this. These are the rules, not the enfor
 - `n=1`: a guess. Never call it a recommendation.
 - `n>=4` agreeing within 10%: a recommendation.
 - Count `n` per axis. Four runs where one carried GPU numbers is `n=1` on the GPU axes.
+- Count runs, not measurements. One job sampled four times is still `n=1`.
 
 ## Trust the right memory number
 - Prefer the cgroup anonymous working set over `memory.peak` / `sstat` MaxRSS, which count

@@ -15,7 +15,7 @@ import math
 import re
 from dataclasses import asdict, dataclass, field
 
-from . import GIB, Observation, fmt_gib, fmt_slurm_time, parse_slurm_mem, parse_slurm_time
+from . import Observation, fmt_gib, fmt_slurm_time, parse_slurm_mem, parse_slurm_time
 
 # No partition, account or "billed partition" name is baked in. Those are site
 # policy, and a plugin that ships one cluster's names checks every other
@@ -36,6 +36,7 @@ _FLAG_ALIASES = {
     "-n": "--ntasks",
     "-N": "--nodes",
     "-J": "--job-name",
+    "-G": "--gpus",
     "-w": "--nodelist",
     "-x": "--exclude",
 }
@@ -70,12 +71,51 @@ class SbatchRequest:
         return self.get("--job-name")
 
     @property
-    def cpus(self) -> int | None:
-        for flag in ("--cpus-per-task", "--ntasks-per-node", "--ntasks"):
-            value = self.get(flag)
-            if value and value.isdigit():
-                return int(value)
+    def cpus_per_task(self) -> int | None:
+        value = self.get("--cpus-per-task")
+        return int(value) if value and value.isdigit() else None
+
+    @property
+    def total_tasks(self) -> int | None:
+        value = self.get("--ntasks")
+        if value and value.isdigit():
+            return int(value)
+        per_node = self.get("--ntasks-per-node")
+        if per_node and per_node.isdigit():
+            return int(per_node) * (self.nodes or 1)
         return None
+
+    @property
+    def tasks_per_node(self) -> int | None:
+        """How many tasks share one node, where the script pins it down.
+
+        1 for a script that names no task count, as most do. None for
+        `--ntasks=N` with neither `--nodes` nor `--ntasks-per-node`: Slurm
+        spreads those tasks over as many nodes as it likes, so there is no
+        per-node figure until the job is placed.
+        """
+        per_node = self.get("--ntasks-per-node")
+        if per_node and per_node.isdigit():
+            return int(per_node)
+        total = self.total_tasks
+        if total is None or total <= 1:
+            return 1
+        return math.ceil(total / self.nodes) if self.nodes else None
+
+    @property
+    def cpus(self) -> int | None:
+        """Cores this job holds on one node: `--cpus-per-task` times the tasks there.
+
+        Not `--cpus-per-task` alone: four tasks of 8 cores hold 32, and a fit or
+        a limit check that read 8 would be wrong by the task count.
+        """
+        tasks = self.tasks_per_node
+        if tasks is None:
+            return None
+        if self.cpus_per_task is None and not (self.has("--ntasks")
+                                               or self.has("--ntasks-per-node")):
+            return None
+        return (self.cpus_per_task or 1) * tasks
 
     @property
     def nodes(self) -> int | None:
@@ -87,11 +127,17 @@ class SbatchRequest:
 
     @property
     def mem_bytes(self) -> int | None:
+        """Memory per node, which is how Slurm reads `--mem`.
+
+        None where the script's own figure is not a byte count: `--mem=0` asks
+        for the whole node, and `--mem-per-gpu` or a `--mem-per-cpu` whose
+        per-node core count Slurm chooses has no total until the job is placed.
+        """
         total = parse_slurm_mem(self.get("--mem"))
         if total is not None:
-            return total
+            return total or None
         per_cpu = parse_slurm_mem(self.get("--mem-per-cpu"))
-        if per_cpu is not None:
+        if per_cpu is not None and self.tasks_per_node is not None:
             return per_cpu * (self.cpus or 1)
         return None
 
@@ -104,13 +150,9 @@ class SbatchRequest:
         """GPU count from whichever of the four spellings the script used."""
         for flag in ("--gres", "--gpus", "--gpus-per-node", "--gpus-per-task"):
             value = self.get(flag)
-            if not value:
-                continue
-            m = re.search(r"(\d+)\s*$", value)
-            if m:
-                return int(m.group(1))
-            if value.strip():
-                return 1
+            count = _gpu_count(value, gres=flag == "--gres") if value else 0
+            if count:
+                return count
         return 0
 
     @property
@@ -133,8 +175,13 @@ class SbatchRequest:
         }
 
 
-def parse_script(text: str) -> SbatchRequest:
-    """Read the `#SBATCH` block. Stops at the first non-comment command line."""
+def parse_script(text: str, cli: list[str] | tuple[str, ...] = ()) -> SbatchRequest:
+    """Read the `#SBATCH` block, then any flags given to `sbatch` itself.
+
+    Stops at the first non-comment command line. `cli` is the argv between
+    `sbatch` and the script; it lands after the script's own lines, so it wins
+    the way it does for sbatch.
+    """
     request = SbatchRequest(text=text)
     for lineno, line in enumerate(text.splitlines(), start=1):
         stripped = line.strip()
@@ -143,16 +190,50 @@ def parse_script(text: str) -> SbatchRequest:
         if not stripped.startswith("#"):
             break  # Slurm ignores #SBATCH after the first real command; so do we
         m = re.match(r"#\s*SBATCH\s+(.*)$", stripped, re.IGNORECASE)
-        if not m:
-            continue
-        for token in _split_directive(m.group(1)):
-            name, _, value = token.partition("=")
-            if not value and " " in token:
-                name, _, value = token.partition(" ")
-            name = name.strip()
-            name = _FLAG_ALIASES.get(name, name)
-            request.directives.append((lineno, name, value.strip() or None))
+        if m:
+            request.directives += _directives(m.group(1), lineno)
+    if cli:
+        request.directives += _directives(" ".join(cli), 0)
     return request
+
+
+def _directives(body: str, lineno: int) -> list[tuple[int, str, str | None]]:
+    out: list[tuple[int, str, str | None]] = []
+    for token in _split_directive(body):
+        name, _, value = token.partition("=")
+        if not value and " " in token:
+            name, _, value = token.partition(" ")
+        name = name.strip()
+        if not value and len(name) > 2 and name[0] == "-" and name[1] != "-":
+            name, value = name[:2], name[2:]  # getopt's attached form: `-c8`, `-pgpu`
+        out.append((lineno, _FLAG_ALIASES.get(name, name), value.strip() or None))
+    return out
+
+
+def _gpu_count(value: str, *, gres: bool) -> int:
+    """`gpu:a100:2` -> 2. A `--gres` list counts only its GPU entries.
+
+    `--gres=gpu:1,lscratch:10` is one GPU, not ten, and `--gres=lscratch:100`
+    is none: a non-GPU GRES must not mark a CPU job as a GPU one. A slice of a
+    card (`mps:50`, `shard:2`) counts as one: its number is slices, not cards,
+    and the job needs a GPU node all the same.
+    """
+    total = 0
+    for item in value.split(","):
+        parts = [p for p in re.sub(r"\(.*?\)", "", item).strip().split(":") if p]
+        if gres:
+            kind = parts[0].lower() if parts else ""
+            if kind in {"mps", "shard"}:
+                total += 1
+                continue
+            if kind != "gpu":
+                continue
+            parts = parts[1:]
+        elif not parts:
+            continue
+        count = parts[-1] if parts else ""
+        total += int(count) if count.isdigit() else 1
+    return total
 
 
 def _split_directive(body: str) -> list[str]:
@@ -210,15 +291,14 @@ def exceeds_partition_limit(request: SbatchRequest, facts) -> list[str]:
                        f"MaxNodes ({facts.max_nodes})")
 
     cpu_ceiling = facts.max_cpus_per_node or facts.node_cpus_max
-    if cpu_ceiling and request.cpus and (request.nodes or 1) == 1 and request.cpus > cpu_ceiling:
+    if cpu_ceiling and request.cpus and request.cpus > cpu_ceiling:
         reasons.append(
             f"{request.cpus} cores on one node exceeds the largest node in {name} "
             f"({cpu_ceiling} cores); it would sit PENDING forever"
         )
 
     mem_ceiling = facts.max_mem_per_node_bytes or facts.node_mem_max_bytes
-    if (mem_ceiling and request.mem_bytes and (request.nodes or 1) == 1
-            and request.mem_bytes > mem_ceiling):
+    if mem_ceiling and request.mem_bytes and request.mem_bytes > mem_ceiling:
         reasons.append(
             f"--mem={request.get('--mem') or request.mem_bytes} exceeds the largest node in "
             f"{name} ({fmt_gib(mem_ceiling)}); it would sit PENDING forever"
@@ -310,19 +390,41 @@ def landed_on_gpu_node(request: SbatchRequest, placement: dict) -> str | None:
 
 
 def launch_without_max_run_duration(tokens: list[str]) -> str | None:
-    """A VM must not be able to outlive the work it was created for."""
-    joined = " ".join(tokens)
-    if "compute" not in tokens or "instances" not in tokens or "create" not in tokens:
+    """A VM must not be able to outlive the work it was created for.
+
+    `--termination-time` bounds it as well as `--max-run-duration` does.
+    `--instance-termination-action` alone does not: it only says what happens
+    at a deadline, and without one there is none.
+    """
+    start = next((i for i, t in enumerate(tokens) if t.rsplit("/", 1)[-1] == "gcloud"), None)
+    if start is None:
         return None
-    if any(t.startswith("--max-run-duration") for t in tokens):
+    rest = tokens[start + 1:]
+    if "compute" not in rest or "instances" not in rest:
         return None
-    if "--instance-termination-action" in joined:
+    if not any(t in {"create", "create-with-container"} for t in rest):
+        return None
+    if any(t.startswith(("--max-run-duration", "--termination-time")) for t in rest):
         return None
     return (
         "gcloud compute instances create without --max-run-duration: the VM bills until someone "
         "remembers it. Add --max-run-duration=<walltime> (plus "
         "--instance-termination-action=DELETE) so it cannot outlive the job."
     )
+
+
+def sbatch_flags(tokens: list[str]) -> list[str]:
+    """The flags given to `sbatch` itself, which override the script's `#SBATCH` lines."""
+    start = next((i for i, t in enumerate(tokens) if t.endswith("sbatch")), None)
+    if start is None:
+        return []
+    script = script_argument(tokens)
+    flags: list[str] = []
+    for token in tokens[start + 1:]:
+        if token == script or token in {"&&", "||", ";", "|"}:
+            break
+        flags.append(token)
+    return flags
 
 
 def script_argument(tokens: list[str]) -> str | None:
@@ -365,7 +467,7 @@ def policy_warnings(request: SbatchRequest, facts=None, site=None) -> list[str]:
         )
     if not request.has("--time"):
         out.append("no --time; the job inherits the partition default and can squat until MaxTime")
-    if not (request.has("--mem") or request.has("--mem-per-cpu")):
+    if not any(request.has(f) for f in ("--mem", "--mem-per-cpu", "--mem-per-gpu")):
         out.append("no --mem; DefMemPerCPU applies and is usually far below what the job needs")
     if request.gpus and not request.has("--cpus-per-task"):
         out.append("GPU job with no --cpus-per-task; one core often starves the data loader")
@@ -408,9 +510,10 @@ class CheckResult:
         return asdict(self)
 
 
-def check_script(text: str, facts=None, site=None) -> CheckResult:
+def check_script(text: str, facts=None, site=None,
+                 cli: list[str] | tuple[str, ...] = ()) -> CheckResult:
     """The pre-submit lint. Pure: partition and site facts come in as data."""
-    request = parse_script(text)
+    request = parse_script(text, cli)
     refusals = [r for r in (missing_account(request, site), partition_unusable(request, facts),
                             unguarded_gpu_nodes(request, facts)) if r]
     refusals += exceeds_partition_limit(request, facts)
@@ -445,6 +548,3 @@ def observed_peaks(observations: list[Observation]) -> dict[str, float | None]:
         "elapsed_seconds": top("elapsed_seconds"),
     }
 
-
-def mem_request_floor_gib(nbytes: float) -> int:
-    return max(1, math.ceil(nbytes / GIB))

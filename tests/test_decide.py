@@ -252,3 +252,121 @@ def test_the_block_supplies_an_account_only_when_the_site_named_one():
     silent = fit(runs, request=request)
     assert "--account" not in silent.sbatch_block
     assert any("default association" in n for n in silent.notes)
+
+
+# ------------------------------------------------------------ counting runs
+
+
+def test_a_rollup_counts_its_runs_once_not_once_per_axis():
+    """slurmpast sends one observation per axis; summing them read 100 runs as n=212."""
+    from conftest import load_text
+
+    from cloudfit.collect import FakeRunner
+    from cloudfit.history import history
+
+    past = history("software", runner=FakeRunner().on("slurmpast",
+                                                       stdout=load_text("slurmpast_sizing_real.json")),
+                   partition="test")
+    result = fit(past.observations)
+    assert result.n == 99  # the best-covered axis, not the sum of all three
+    assert axis(result, "memory").confidence.n == 13
+    assert axis(result, "walltime").confidence.n == 99  # completed runs, not all 100
+
+
+# ------------------------------------------------------------- tasks per node
+
+
+def _node_reading(cores_busy: float, allocated: int, node_count: int = 1) -> Observation:
+    return Observation(source="slurmwatch", kind="final", job_id="7", state="COMPLETED",
+                       cores_allocated=allocated, cores_used=cores_busy, node_count=node_count,
+                       mem_peak_bytes=8 * GIB, elapsed_seconds=600)
+
+
+def test_cores_are_fitted_per_task_when_tasks_share_a_node():
+    """Four tasks of 8 cores: 20 busy on the node is 5 per task, not 20 per task."""
+    request = parse_script("#SBATCH --ntasks-per-node=4\n#SBATCH --cpus-per-task=8\n")
+    result = fit([_node_reading(20.0, 32)], request=request)
+    cores = axis(result, "cores")
+    assert cores.current == "8"
+    assert cores.recommended == "7"  # ceil(1.3 x 5.0), where the old fit said 26
+    assert cores.direction == "down"
+    assert "per task" in cores.reason and "evenly" in cores.reason
+    assert "#SBATCH --cpus-per-task=7" in result.sbatch_block
+    assert not result.refusals  # 7 per task is above the 5.0 per-task peak
+
+
+def test_an_mpi_script_is_not_handed_a_core_count_per_rank(compute_facts):
+    """128 single-core ranks: the old block said --cpus-per-task=128, or 16384 cores."""
+    from cloudfit.guard import partition_ceilings
+
+    request = parse_script("#SBATCH --nodes=1\n#SBATCH --ntasks=128\n")
+    result = fit([_node_reading(100.0, 128)], request=request,
+                 ceilings=partition_ceilings(compute_facts))
+    cores = axis(result, "cores")
+    assert cores.current == "1" and cores.recommended == "1"
+    assert "#SBATCH --cpus-per-task=1" in result.sbatch_block
+
+
+def test_tasks_slurm_spread_over_nodes_are_not_split_by_guesswork():
+    request = parse_script("#SBATCH --ntasks=64\n#SBATCH --cpus-per-task=2\n")
+    one_node = axis(fit([_node_reading(64.0, 128)], request=request), "cores")
+    assert one_node.recommended == "2"  # every task was on the node it read
+    spread = axis(fit([_node_reading(64.0, 64, node_count=2)], request=request), "cores")
+    assert spread.direction == "unknown"
+    assert "Pin the layout" in spread.reason
+
+
+def test_a_one_task_script_reads_exactly_as_before():
+    result = fit([_node_reading(5.4, 16)], request=parse_script("#SBATCH -c 16\n"))
+    cores = axis(result, "cores")
+    assert cores.reason.startswith("busiest run used 5.4 of 16 cores; ceil(1.3 x 5.4) = 8")
+    assert "per task" not in cores.reason
+
+
+# ------------------------------------------------------------------ walltime
+
+
+def test_walltime_is_not_fitted_from_runs_that_stopped_early():
+    """A run CANCELLED at five minutes says where it stopped, not how long the work takes."""
+    cancelled = Observation(source="sacct", kind="final", job_id="1", state="CANCELLED",
+                            elapsed_seconds=300, timelimit_seconds=43200)
+    failed = Observation(source="sacct", kind="final", job_id="2", state="FAILED",
+                         elapsed_seconds=20, timelimit_seconds=43200)
+    walltime = axis(fit([cancelled, failed]), "walltime")
+    assert walltime.direction == "unknown"
+    assert walltime.recommended is None
+    assert "CANCELLED/FAILED" in walltime.reason
+
+    done = Observation(source="sacct", kind="final", job_id="3", state="COMPLETED",
+                       elapsed_seconds=36000, timelimit_seconds=43200)
+    walltime = axis(fit([cancelled, done]), "walltime")
+    assert walltime.recommended == "12:30:00"  # 1.25 x the one completed run's 10h
+    assert walltime.confidence.n == 1
+    assert "not counted" in walltime.reason
+
+
+def test_a_timeout_never_cuts_the_limit_it_proved_too_short():
+    """Runs cut off at 1h, and the script now asks 4h: 1.25h would be a cut, labelled up."""
+    obs = [Observation(source="sacct", kind="final", job_id="1", state="TIMEOUT",
+                       elapsed_seconds=3600, timelimit_seconds=3600)]
+    result = fit(obs, request=parse_script("#SBATCH --time=04:00:00\n"))
+    walltime = axis(result, "walltime")
+    assert walltime.direction == "hold"
+    assert walltime.recommended == "04:00:00"
+    assert "stays rather than coming down" in walltime.reason
+
+
+def test_the_block_says_its_mem_replaces_a_per_cpu_request():
+    request = parse_script("#SBATCH -c 4\n#SBATCH --mem-per-cpu=8G\n")
+    result = fit(record("record_four_runs_agreeing_synthetic"), request=request)
+    assert "#SBATCH --mem=" in result.sbatch_block
+    assert any("replaces the script's --mem-per-cpu" in n for n in result.notes)
+
+
+def test_mem_zero_is_the_whole_node_not_zero_bytes():
+    """`--mem=0` asks for every byte on the node; read as 0 it made any fit an increase."""
+    obs = Observation(source="slurmwatch", kind="final", job_id="9", state="COMPLETED",
+                      mem_limit_bytes=250 * GIB, mem_peak_bytes=10 * GIB, elapsed_seconds=60)
+    memory = axis(fit([obs], request=parse_script("#SBATCH --mem=0\n")), "memory")
+    assert memory.direction == "down"
+    assert memory.current == "250.0 GiB"

@@ -31,6 +31,57 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Fixed
 
+- **A job measured again was counted again.** `measure` records every snapshot, and `fit`
+  recorded its live one before reading history back, so one running job fitted three times
+  reported `n=4 agreeing within 0%: a recommendation`. Snapshots of one job are now one run
+  (the latest, lifted to the busiest reading on each axis), in the record and in `fit`, and
+  `fit` records only after it has read.
+- **A slurmpast rollup was counted once per axis.** It arrives as one observation per axis
+  and the headline `n` summed them, so the `software` fixture's 100 runs read as `n=212`. A
+  rollup now counts once, at its best-covered axis, and the walltime axis takes slurmpast's
+  own count of completed runs: 4 of the 14 on `gpu`, where it claimed 14.
+- **`fit` ignored the partition.** History came from every partition and the busiest won, so
+  a GPU script was sized from the same workload's CPU runs: the fixture's 12-hour `gpu` job
+  would have been cut to `--time=01:14:00` from its 59-minute `test` runs. `fit` and
+  `history` now read the runs of the partition the script will run on, from slurmpast, sacct
+  and the own record alike, and use every run only where that partition has none.
+- **`--cpus-per-task` was sized as though every job had one task.** slurmwatch reads a node
+  and sacct the whole job, but the flag is per task: four tasks of 8 cores using 20 were told
+  `--cpus-per-task=26` (104 cores), and a 128-rank MPI script's block said
+  `--cpus-per-task=128`. Readings are now split per task by the script's own layout, the
+  reason says when a node's reading was split evenly, and `check` counts every task on a
+  node, which also stops it refusing `--ntasks=256` with no `--nodes` as too big for one.
+- **A running job in sacct was read as finished**, so its elapsed-so-far became a walltime
+  fit: an hour into a 12-hour job, `--time` was cut to `01:15:00`. Only terminal states count
+  as finished now. Walltime also no longer fits from runs that ended FAILED, CANCELLED or
+  OUT_OF_MEMORY, whose elapsed is where they stopped, and a TIMEOUT, which proves a floor,
+  can raise `--time` but no longer cuts one.
+- The hook read the script and not sbatch's own flags, which override it, so
+  `sbatch -A acct -p gpu --gres=gpu:1 job.sh` was denied for lines the file did not carry,
+  and `-p` had the wrong partition's limits checked.
+- Script parsing: `--gres=gpu:1,lscratch:10` counted ten GPUs, and `--gres=lscratch:100`
+  made a CPU job a GPU one that skipped the GPU-node exclusion (a slice of a card, `mps:50`
+  or `shard:2`, still counts as one GPU, since it needs a GPU node); `-G` was not read as
+  `--gpus`; getopt's attached forms (`-c8`, `-N1`, `-pgpu`) were dropped; `--mem-per-gpu`
+  drew a "no --mem" prompt on every submission; and `--mem=0`, the whole node, read as zero
+  bytes, so every fit of it came out as an increase.
+- The VM guard fired on any command containing `compute instances create` (an `echo`
+  included), refused `--termination-time`, which bounds a VM as well as
+  `--max-run-duration` does, and passed `--instance-termination-action` alone, which bounds
+  nothing.
+- `doctor`'s firewall fix deleted `default-allow-rdp` whichever rule was open, even where
+  that rule did not exist. It is offered only when RDP is one of the open rules; deleting SSH
+  with no IAP rule in its place would lock everyone out, so that stays advice.
+- `history.py` and `probe.py` bound `default_runner` at import, so a test that patched
+  `collect.default_runner` still ran the real `slurmpast` and `sacct` on any machine that has
+  them. Both resolve it through `collect` now, and the test asserts its fake answered.
+- `marketplace.json` still carried an em-dash, written as a JSON escape the 0.2.2 sweep
+  searched straight past. `test_no_em_dash_anywhere_in_the_repo` checks both spellings.
+- The README chart said `13G` and `1h` where the fit says `14G` and `00:59:00`, and the line
+  above it said two-thirds of the GPU sat empty where the chart shows 32G of 80G used: 60%.
+- `cloudfit.__version__` said 0.1.0 through three releases. `test_the_declared_versions_agree`
+  pins it with the other three.
+- CI's server job checked for seven tools and missed `site`.
 - The site-discovery tests read the real environment, so on a machine with the `CLOUDFIT_*`
   vars set they measured that cluster instead of the fixture's and three of them failed.
   Setting those vars is the documented way to tell cloudfit what a cluster is called, which
@@ -40,6 +91,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Changed
 
+- The skill states two rules the tools now enforce: `--cpus-per-task` is per task, and `n`
+  counts runs, not measurements. Its description has a comma where it had ` - `.
+- `test_doctor_only_ever_runs_read_only_gcloud_verbs` checks the verb as well as the command
+  group, which alone cannot tell `firewall-rules list` from `firewall-rules delete`.
 - The README says what the reader gets, not how it is built. The cluster section listed three
   env var names and a four-step precedence chain, which is design documentation and belongs
   in the skill; it now says there is nothing to configure and shows the sentence you type

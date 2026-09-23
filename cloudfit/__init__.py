@@ -10,7 +10,7 @@ import math
 import re
 from dataclasses import asdict, dataclass, field
 
-__version__ = "0.1.0"
+__version__ = "0.2.2"
 
 GIB = 1024**3
 
@@ -23,6 +23,11 @@ HBM_TRIM_ABOVE = 92.0
 GPU_COMPUTE_FLOOR_PERCENT = 50.0
 AGREEMENT_PERCENT = 10.0
 RECOMMENDED_N = 4
+
+# Slurm states a job does not leave. Anything else (RUNNING, PENDING, SUSPENDED,
+# REQUEUED...) is a run still in progress, whose elapsed time is only a floor.
+FINISHED_STATES = frozenset({"COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", "OUT_OF_MEMORY",
+                             "NODE_FAIL", "PREEMPTED", "BOOT_FAIL", "DEADLINE"})
 
 
 @dataclass(frozen=True)
@@ -51,6 +56,7 @@ class Observation:
     cores_allocated: int | None = None
     cores_used: float | None = None
     cores_basis: str = "peak"  # peak (cgroup sample) | average (sacct CPU-seconds / elapsed)
+    cores_scope: str = "node"  # node (one node's cgroup) | job (every task) | task (one task)
     mem_limit_bytes: int | None = None
     mem_peak_bytes: int | None = None
     mem_peak_working_set_bytes: int | None = None

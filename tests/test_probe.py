@@ -88,6 +88,21 @@ def test_doctor_reports_the_open_ssh_rule_as_attention():
     assert "IAP" in firewall.detail
 
 
+def test_the_firewall_fix_only_ever_names_a_rule_that_is_open():
+    """The fix deleted `default-allow-rdp` whichever rule was open, even one that did not exist."""
+    replay = load_json("gcloud_doctor_real.json")
+    both = next(f for f in doctor(FakeRunner(), project="p", responses=replay).findings
+                if f.key == "firewall")
+    assert both.fix_argv[4] == "default-allow-rdp"  # the one delete that is always safe
+
+    replay["firewall_rules_list"] = [r for r in replay["firewall_rules_list"]
+                                     if r["name"] != "default-allow-rdp"]
+    ssh_only = next(f for f in doctor(FakeRunner(), project="p", responses=replay).findings
+                    if f.key == "firewall")
+    assert ssh_only.status == "attention"
+    assert ssh_only.fix_argv is None  # deleting SSH with no IAP rule locks everyone out
+
+
 def test_doctor_reports_a_narrowed_default_service_account_as_ok():
     report = doctor(FakeRunner(), project="p", responses=load_json("gcloud_doctor_real.json"))
     sa = next(f for f in report.findings if f.key == "default-service-account")

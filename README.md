@@ -2,7 +2,7 @@
 
 # 🎯 cloudfit
 
-**Asked for 16 cores and 96 GB, used 5 and 9, and left two-thirds of the GPU empty.
+**Asked for 16 cores and 96 GB, used 5 and 9, and left 60% of the GPU empty.
 cloudfit cuts the over-ask and fills the card, in one pass.**
 
 </div>
@@ -10,8 +10,8 @@ cloudfit cuts the over-ask and fills the card, in one pass.**
 ```
               allocated       used          cloudfit says
  cores        16  ██████████  5.4 ███▍      8    █████      ↓ cut
- RAM          96G ██████████  9.3G █        13G  █▎         ↓ cut
- walltime     2h  ██████████  47m ███▉      1h   █████      ↓ cut
+ RAM          96G ██████████  9.3G █        14G  █▌         ↓ cut
+ walltime     2h  ██████████  47m ███▉      59m  ████▉      ↓ cut
  GPU HBM      80G ██████████  32G ████      72G  █████████  ↑ raise batch / seq / KV
 ```
 

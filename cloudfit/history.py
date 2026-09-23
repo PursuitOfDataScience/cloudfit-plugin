@@ -16,8 +16,10 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import GIB, Observation, parse_slurm_mem, parse_slurm_time
-from .collect import Runner, default_runner
+from . import FINISHED_STATES, GIB, Observation, parse_slurm_mem, parse_slurm_time
+from . import collect as _collect
+from .collect import Runner
+from .decide import one_per_run
 
 DEFAULT_SINCE = "now-30days"
 RECORD_NAME = "history.jsonl"
@@ -107,7 +109,7 @@ def read_record(workload: str | None, *, directory: str | os.PathLike | None = N
             # the safe reading rather than being sized to a sampled instant.
             row["mem_peak_is_lifetime"] = True
         out.append(Observation(**{k: v for k, v in row.items() if k in fields}))
-    return out
+    return one_per_run(out)
 
 
 # ------------------------------------------------------------------ slurmpast
@@ -116,6 +118,7 @@ _MEM_PEAK = re.compile(r"([\d.]+)\s*(KiB|MiB|GiB|TiB)\s+peak(?:\s+across\s+(\d+)
 _MEM_OOM = re.compile(r"the largest at\s+([\d.]+)\s*(KiB|MiB|GiB|TiB)", re.I)
 _CORES = re.compile(r"([\d.]+)\s+cores busy per task at peak(?:\s+across\s+(\d+)\s+runs)?", re.I)
 _LONGEST = re.compile(r"((?:\d+-)?[\d:]+)\s+longest", re.I)
+_COMPLETED = re.compile(r"longest of (\d+) completed runs?", re.I)
 _UNIT = {"KIB": 1024, "MIB": 1024**2, "GIB": GIB, "TIB": 1024**4}
 
 
@@ -138,6 +141,9 @@ def _observations_from_slurmpast(entry: dict) -> tuple[list[Observation], list[s
 
     for advice in entry.get("advice") or []:
         flag, observed = advice.get("flag"), advice.get("observed") or ""
+        caution = " ".join((advice.get("caution") or "").split())
+        if caution:
+            notes.append(f"{name} {flag}: {caution}")  # slurmpast's own caveat on that figure
         if flag == "--mem":
             m = _MEM_PEAK.search(observed) or _MEM_OOM.search(observed)
             if m:
@@ -155,15 +161,18 @@ def _observations_from_slurmpast(entry: dict) -> tuple[list[Observation], list[s
             if m:
                 axis_n = int(m.group(2)) if m.group(2) else runs
                 out.append(base(runs=max(1, axis_n), cores_used=float(m.group(1)),
-                                cores_allocated=_requested_int(advice)))
+                                cores_scope="task", cores_allocated=_requested_int(advice)))
             else:
                 notes.append(f"{name}: no CPU accounting in slurmpast ({observed!r})")
         elif flag == "--time":
             m = _LONGEST.search(observed)
             if m:
                 seconds = parse_slurm_time(m.group(1))
+                # Only completed runs time the work, and slurmpast says how many there were.
+                completed = _COMPLETED.search(advice.get("basis") or "")
+                axis_n = int(completed.group(1)) if completed else runs
                 if seconds:
-                    out.append(base(runs=max(1, runs), elapsed_seconds=seconds,
+                    out.append(base(runs=max(1, axis_n), elapsed_seconds=seconds,
                                     timelimit_seconds=parse_slurm_time(advice.get("requested"))))
             else:
                 notes.append(f"{name}: no completed run to time ({observed!r})")
@@ -231,6 +240,11 @@ def _gpus_from_tres(tres: str | None) -> int:
     return int(m.group(1)) if m else 0
 
 
+def _nodes_from_tres(tres: str | None) -> int | None:
+    m = re.search(r"(?:^|,)node=(\d+)", tres or "")
+    return int(m.group(1)) if m else None
+
+
 def observations_from_sacct(text: str) -> list[Observation]:
     """Parse `sacct -P` rows, folding step rows into their job.
 
@@ -260,7 +274,7 @@ def observations_from_sacct(text: str) -> list[Observation]:
             "req_mem": parse_slurm_mem(req_mem), "max_rss": parse_slurm_mem(max_rss),
             "total_cpu": parse_slurm_time(total_cpu) or _parse_total_cpu(total_cpu),
             "elapsed": parse_slurm_time(elapsed), "timelimit": parse_slurm_time(timelimit),
-            "gpus": _gpus_from_tres(tres),
+            "gpus": _gpus_from_tres(tres), "nodes": _nodes_from_tres(tres),
         }
 
     out: list[Observation] = []
@@ -268,10 +282,13 @@ def observations_from_sacct(text: str) -> list[Observation]:
         peak = row["max_rss"] or steps.get(base)
         elapsed = row["elapsed"] or 0
         cores_used = (row["total_cpu"] / elapsed) if (row["total_cpu"] and elapsed) else None
+        # A job still RUNNING is in sacct too, and its elapsed so far is a floor.
+        finished = (row["state"] or "").upper() in FINISHED_STATES
         out.append(Observation(
-            source="sacct", kind="final", job_id=base, workload=row["name"] or None,
-            partition=row["partition"] or None, state=row["state"],
+            source="sacct", kind="final" if finished else "sample", job_id=base,
+            workload=row["name"] or None, partition=row["partition"] or None, state=row["state"],
             cores_allocated=row["cpus"], cores_used=cores_used, cores_basis="average",
+            cores_scope="job", node_count=row["nodes"],
             mem_limit_bytes=row["req_mem"], mem_peak_bytes=peak,
             mem_peak_working_set_bytes=None, mem_cache_measured=False,
             mem_peak_source="sacct MaxRSS" if peak else None,
@@ -293,8 +310,19 @@ def _parse_total_cpu(text: str) -> float | None:
         return seconds
 
 
+def on_partition(observations: list[Observation], partition: str | None) -> list[Observation]:
+    """The runs from one partition, or all of them when none ran there.
+
+    A workload's GPU runs and its CPU runs are two different jobs to size, so a
+    script bound for one partition reads that partition's runs where it has any.
+    """
+    if not partition:
+        return observations
+    return [o for o in observations if o.partition == partition] or observations
+
+
 def from_sacct(workload: str, runner: Runner, *, since: str = DEFAULT_SINCE,
-               user: str | None = None) -> HistoryResult | str:
+               partition: str | None = None, user: str | None = None) -> HistoryResult | str:
     argv = ["sacct", "-P", "-n", "--format", _SACCT_FORMAT, "--name", workload,
             "-S", since, "-u", user or getpass.getuser()]
     result = runner(argv, timeout=180.0)
@@ -306,8 +334,9 @@ def from_sacct(workload: str, runner: Runner, *, since: str = DEFAULT_SINCE,
         return f"sacct has no run named {workload!r} since {since}"
 
     observations = observations_from_sacct(result.stdout)
-    usable = [o for o in observations
-              if o.mem_peak_bytes or o.cores_used is not None or o.elapsed_seconds]
+    usable = on_partition([o for o in observations
+                           if o.mem_peak_bytes or o.cores_used is not None or o.elapsed_seconds],
+                          partition)
     if not usable:
         return (f"sacct lists {len(observations)} run(s) of {workload!r} with every resource field "
                 "empty: JobAcctGatherType is off")
@@ -326,12 +355,12 @@ def from_sacct(workload: str, runner: Runner, *, since: str = DEFAULT_SINCE,
 def history(workload: str, *, runner: Runner | None = None, since: str = DEFAULT_SINCE,
             partition: str | None = None, directory: str | os.PathLike | None = None,
             user: str | None = None) -> HistoryResult:
-    runner = runner or default_runner()
+    runner = runner or _collect.default_runner()
     tried: list[str] = []
 
     for attempt in (
         lambda: from_slurmpast(workload, runner, since=since, partition=partition, user=user),
-        lambda: from_sacct(workload, runner, since=since, user=user),
+        lambda: from_sacct(workload, runner, since=since, partition=partition, user=user),
     ):
         outcome = attempt()
         if isinstance(outcome, HistoryResult):
@@ -339,7 +368,7 @@ def history(workload: str, *, runner: Runner | None = None, since: str = DEFAULT
             return outcome
         tried.append(outcome)
 
-    own = read_record(workload, directory=directory)
+    own = on_partition(read_record(workload, directory=directory), partition)
     if own:
         return HistoryResult(
             workload=workload, source="record", n=len(own), observations=own, tried=tried,

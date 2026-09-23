@@ -99,14 +99,16 @@ def measure(job_id: str, record: bool = True) -> dict:
 def history(workload: str | None = None, script_path: str | None = None,
             since: str = _history.DEFAULT_SINCE) -> dict:
     """Past runs of a workload: slurmpast, else sacct, else cloudfit's own record."""
+    partition = None
     if not workload:
         if not script_path:
             raise ValueError("pass either workload or script_path")
         text = Path(script_path).read_text(encoding="utf-8")
         workload = _history.workload_from_script(text, script_path)
+        partition = _guard.parse_script(text).partition
     if not workload:
         raise ValueError("could not determine a workload name; add #SBATCH --job-name")
-    return _history.history(workload, since=since).as_dict()
+    return _history.history(workload, since=since, partition=partition).as_dict()
 
 
 @mcp.tool()
@@ -130,19 +132,23 @@ def fit(job_id: str | None = None, script_path: str | None = None,
     else:
         workload = None
 
+    live = None
     if job_id:
         measurement = _collect.measure(job_id)
         notes += measurement.warnings
-        if measurement.observation is not None:
-            observations.append(measurement.observation)
+        live = measurement.observation
+        if live is not None:
+            observations.append(live)
             sources.append("slurmwatch")
-            workload = workload or measurement.observation.workload
-            _history.record(measurement.observation)
-            if facts is None and measurement.observation.partition:
-                facts = _collect.partition_facts(measurement.observation.partition)
+            workload = workload or live.workload
+            if facts is None and live.partition:
+                facts = _collect.partition_facts(live.partition)
 
     if workload:
-        past = _history.history(workload, since=since)
+        # One workload on a GPU partition and on a CPU one is two jobs to size, so
+        # read the runs from where this one will run.
+        past = _history.history(workload, since=since,
+                                partition=facts.name if facts is not None else None)
         if past.observations:
             observations += past.observations
             sources.append(past.source)
@@ -151,6 +157,12 @@ def fit(job_id: str | None = None, script_path: str | None = None,
 
     if not observations and not job_id and not workload:
         raise ValueError("pass a job_id, a script_path or a script")
+
+    # Recorded after the lookup, so the snapshot just taken is not read back as a
+    # second run, and a job sampled again is still the one run it was.
+    if live is not None:
+        _history.record(live)
+    observations = _decide.one_per_run(observations)
 
     result = _decide.fit(observations, request=request,
                          ceilings=_guard.partition_ceilings(facts),

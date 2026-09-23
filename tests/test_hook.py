@@ -142,3 +142,32 @@ def test_the_hook_denies_a_real_bad_script_end_to_end(tmp_path):
 
 def test_hook_py_is_runnable_as_a_script():
     assert Path(ROOT / "cloudfit" / "hook.py").is_file()
+
+
+def gpu_runner() -> FakeRunner:
+    return (
+        FakeRunner()
+        .on("sinfo", "-h", "-o", "%P", stdout="debug compute* gpu\n")
+        .on("sacctmgr", "DefaultAccount", stdout="\n")
+        .on("scontrol", "show", "partition", "gpu",
+            stdout=load_text("scontrol_partition_gpu_real.txt"))
+        .on("sinfo", "-p", "gpu", "%n %c %m", stdout=load_text("sinfo_gpu_sizes_real.txt"))
+        .on("sinfo", "-p", "gpu", "%N %G", stdout=load_text("sinfo_gpu_nodes_real.txt"))
+    )
+
+
+def test_flags_on_the_sbatch_line_count_as_the_script_would():
+    """`sbatch -A x -p gpu --gres=gpu:1 job.sh` was denied for the lines the file lacks."""
+    bare = CLEAN.replace("#SBATCH --account=pi-example\n", "").replace(
+        "#SBATCH --partition=compute\n", "")
+    assert verdict(evaluate("sbatch job.sbatch", bare, runner=gpu_runner())) == "deny"
+    command = "sbatch -A pi-example -p gpu --gres=gpu:1 job.sbatch"
+    assert evaluate(command, bare, runner=gpu_runner()) is None
+
+
+def test_a_partition_on_the_command_line_is_the_one_checked():
+    runner = gpu_runner()
+    result = evaluate("sbatch -p gpu job.sbatch", CLEAN, runner=runner)
+    assert verdict(result) == "deny"  # a CPU job on the GPU partition, from the flag
+    assert "partition gpu" in result["hookSpecificOutput"]["permissionDecisionReason"]
+    assert runner.argv_containing("scontrol", "show", "partition", "gpu")

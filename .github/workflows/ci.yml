@@ -50,11 +50,12 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install "mcp>=1.28,<2"
-      - name: the server imports and registers its seven tools
+      - name: the server imports and registers its eight tools
         run: |
           python - <<'PY'
           import cloudfit.server as s
-          tools = ("capabilities", "measure", "history", "fit", "check", "submit", "doctor")
+          tools = ("site", "capabilities", "measure", "history", "fit", "check", "submit",
+                   "doctor")
           missing = [t for t in tools if not callable(getattr(s, t, None))]
           assert not missing, f"tools missing from the server: {missing}"
           print(f"server imports; {len(tools)} tools present")

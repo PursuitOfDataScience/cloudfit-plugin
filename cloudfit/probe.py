@@ -14,7 +14,8 @@ import shutil
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 
-from .collect import Runner, default_runner
+from . import collect as _collect
+from .collect import Runner
 
 SLURM_BINARIES = ("slurmwatch", "slurmpast", "sacct", "sacctmgr", "sinfo", "sbatch",
                   "squeue", "scontrol", "srun")
@@ -72,7 +73,7 @@ def _config_pairs(text: str) -> dict[str, str]:
 def capabilities(runner: Runner | None = None,
                  which: Callable[[str], str | None] = shutil.which) -> Capabilities:
     """Which telemetry sources exist here, and whether the user can fix the gaps."""
-    runner = runner or default_runner()
+    runner = runner or _collect.default_runner()
     caps = Capabilities(privileged=os.geteuid() == 0)
     for name in (*SLURM_BINARIES, *CLOUD_BINARIES, *LOCAL_BINARIES):
         caps.binaries[name] = which(name)
@@ -243,7 +244,7 @@ def doctor(runner: Runner | None = None, *, project: str | None = None,
     instead of calling gcloud, which is how this is tested without touching the
     live project.
     """
-    runner = runner or default_runner()
+    runner = runner or _collect.default_runner()
     if responses is None:
         project = _project(runner, project)
     out = Doctor(project=project)
@@ -313,16 +314,19 @@ def doctor(runner: Runner | None = None, *, project: str | None = None,
             out.findings.append(Finding(f"quota:{metric}", "ok",
                                         f"{usage:g}/{limit:g} used"))
 
-    open_ssh = [r for r in (rules or [])
+    open_tcp = [r for r in (rules or [])
                 if isinstance(r, dict) and "0.0.0.0/0" in (r.get("sourceRanges") or [])
                 and any(a.get("IPProtocol") == "tcp" for a in r.get("allowed") or [])]
-    if open_ssh:
-        names = ", ".join(sorted(r.get("name", "?") for r in open_ssh))
+    if open_tcp:
+        names = sorted(r.get("name", "?") for r in open_tcp)
+        # Deleting the default RDP rule is the one fix that is always safe on a Linux
+        # project. Deleting SSH without an IAP rule in its place locks everyone out,
+        # so that one is advice, and a rule that is not open gets no fix at all.
         out.findings.append(Finding(
             "firewall", "attention",
-            f"{names} allow tcp from 0.0.0.0/0; consider IAP-only access instead",
+            f"{', '.join(names)} allow tcp from 0.0.0.0/0; consider IAP-only access instead",
             ["gcloud", "compute", "firewall-rules", "delete", "default-allow-rdp",
-             "--project", str(project)]))
+             "--project", str(project)] if "default-allow-rdp" in names else None))
     elif rules is not None:
         out.findings.append(Finding("firewall", "ok", "no tcp rule open to 0.0.0.0/0"))
 

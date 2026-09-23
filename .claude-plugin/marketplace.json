@@ -6,7 +6,7 @@
     "email": "yuyouzhi666@icloud.com"
   },
   "metadata": {
-    "description": "Fits Slurm jobs to what they actually used \u2014 trims over-asked CPU and RAM, drives an under-used GPU up."
+    "description": "Fits Slurm jobs to what they actually used: trims over-asked CPU and RAM, drives an under-used GPU up."
   },
   "plugins": [
     {

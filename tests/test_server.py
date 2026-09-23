@@ -6,7 +6,7 @@ import asyncio
 import json
 
 import pytest
-from conftest import load_text
+from conftest import load_json, load_text
 
 from cloudfit.collect import FakeRunner, partition_facts
 from cloudfit.guard import parse_script
@@ -155,10 +155,12 @@ def test_history_tool_falls_back_to_the_filename_as_the_workload(tmp_path, monke
 
     path = tmp_path / "tokenize-shards.sbatch"
     path.write_text("#SBATCH --mem=8G\n")  # no --job-name
-    monkeypatch.setattr("cloudfit.collect.default_runner",
-                        lambda: FakeRunner().absent("slurmpast").absent("sacct"))
+    runner = FakeRunner().absent("slurmpast").absent("sacct")
+    monkeypatch.setattr("cloudfit.collect.default_runner", lambda: runner)
     monkeypatch.setenv("CLOUDFIT_HOME", str(tmp_path / "record"))
     assert server.history(script_path=str(path))["workload"] == "tokenize-shards"
+    # The fake answered, not the real cluster: history resolves the runner through collect.
+    assert runner.argv_containing("slurmpast") and runner.argv_containing("sacct")
     with pytest.raises(ValueError, match="pass either"):
         server.history()
 
@@ -172,3 +174,36 @@ def test_measure_records_what_it_measured(record_home, monkeypatch, cpu_overask_
     assert payload["observation"]["job_id"] == "58107383"
     assert payload["recorded_to"].endswith("history.jsonl")
     assert (record_home / "history.jsonl").exists()
+
+
+def _offline(runner: FakeRunner) -> FakeRunner:
+    """No scheduler to ask about the site or a partition: the fit runs on telemetry alone."""
+    return runner.absent("sinfo").absent("sacctmgr").absent("scontrol")
+
+
+def test_fitting_a_running_job_again_does_not_count_it_again(record_home, monkeypatch, gpu_hbm40):
+    """Recorded, then read back from the record: one snapshot became n=2, then 3, then 4."""
+    from cloudfit import server
+
+    runner = _offline(FakeRunner().on("slurmwatch", stdout=json.dumps(gpu_hbm40))
+                      .absent("slurmpast").absent("sacct"))
+    monkeypatch.setattr("cloudfit.collect.default_runner", lambda: runner)
+    for _ in range(4):
+        payload = server.fit(job_id=str(gpu_hbm40["job_id"]))
+        assert payload["n"] == 1
+        assert payload["confidence"]["level"] == "low"
+    assert len((record_home / "history.jsonl").read_text().splitlines()) == 4  # still recorded
+
+
+def test_fit_reads_history_from_the_partition_the_script_runs_on(record_home, monkeypatch):
+    """`software` runs 1h on test and 12h on gpu; sizing the gpu script from test cut it to 1h14m."""
+    from cloudfit import server
+
+    runner = _offline(FakeRunner().on("slurmpast",
+                                      stdout=json.dumps(load_json("slurmpast_sizing_real.json"))))
+    monkeypatch.setattr("cloudfit.collect.default_runner", lambda: runner)
+    script = ("#!/bin/bash\n#SBATCH --job-name=software\n#SBATCH --partition=gpu\n"
+              "#SBATCH --gres=gpu:1\n#SBATCH -c 4\n#SBATCH --mem=65G\n#SBATCH --time=12:00:00\n")
+    walltime = next(d for d in server.fit(script=script)["directives"] if d["axis"] == "walltime")
+    assert walltime["observed"] == "11:59:00 longest"
+    assert walltime["confidence"]["n"] == 4

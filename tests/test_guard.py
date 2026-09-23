@@ -254,3 +254,86 @@ def test_an_unreachable_scheduler_warns_rather_than_refusing():
     result = check_script(CPU_SCRIPT, facts)
     assert result.ok  # "I could not check" is not "this is wrong"
     assert any("could not reach scontrol" in w for w in result.warnings)
+
+
+def test_a_gres_list_counts_only_its_gpus():
+    """`--gres=gpu:1,lscratch:10` read as ten GPUs; `lscratch:100` alone made a CPU job a GPU one."""
+    assert parse_script("#SBATCH --gres=gpu:1,lscratch:10\n").gpus == 1
+    assert parse_script("#SBATCH --gres=gpu:a100:2,tmpspace:50G\n").gpus == 2
+    assert parse_script("#SBATCH --gres=lscratch:100\n").gpus == 0
+    assert parse_script("#SBATCH --gres=gpu\n").gpus == 1
+    assert parse_script("#SBATCH -G 2\n").gpus == 2  # -G is --gpus
+
+
+def test_a_cpu_job_with_a_scratch_gres_is_still_kept_off_gpu_nodes(gpu_facts):
+    script = CPU_SCRIPT.replace("--partition=compute", "--partition=gpu\n#SBATCH --gres=lscratch:100")
+    assert "squats a card" in unguarded_gpu_nodes(parse_script(script), gpu_facts)
+
+
+def test_a_slice_of_a_card_is_still_a_gpu_job(gpu_facts):
+    """`--gres=mps:50` is half a card's compute: not fifty GPUs, and not a CPU job either."""
+    assert parse_script("#SBATCH --gres=mps:50\n").gpus == 1
+    assert parse_script("#SBATCH --gres=shard:2,lscratch:10\n").gpus == 1
+    script = CPU_SCRIPT.replace("--partition=compute", "--partition=gpu\n#SBATCH --gres=mps:50")
+    assert unguarded_gpu_nodes(parse_script(script), gpu_facts) is None  # it needs a GPU node
+
+
+def test_attached_short_flags_parse_like_the_spaced_ones():
+    request = parse_script("#SBATCH -N1\n#SBATCH -c8\n#SBATCH -pgpu\n#SBATCH -t60\n")
+    assert (request.nodes, request.cpus, request.partition) == (1, 8, "gpu")
+    assert request.time_seconds == 3600
+
+
+def test_cpus_counts_every_task_on_the_node():
+    assert parse_script("#SBATCH --ntasks-per-node=4\n#SBATCH -c 8\n").cpus == 32
+    assert parse_script("#SBATCH --nodes=2\n#SBATCH --ntasks=8\n").cpus == 4
+    assert parse_script("#SBATCH -c 8\n").cpus == 8
+    # Slurm places `--ntasks` alone wherever it likes: there is no per-node figure yet.
+    assert parse_script("#SBATCH --ntasks=256\n").cpus is None
+
+
+def test_a_limit_check_counts_every_task_on_the_node(compute_facts):
+    packed = CPU_SCRIPT.replace("--cpus-per-task=4", "--ntasks-per-node=4\n#SBATCH --cpus-per-task=64")
+    assert any("PENDING forever" in r
+               for r in exceeds_partition_limit(parse_script(packed), compute_facts))
+    # 256 ranks with no --nodes spread over as many nodes as they need; that is not a refusal.
+    spread = CPU_SCRIPT.replace("--cpus-per-task=4", "--ntasks=256")
+    assert exceeds_partition_limit(parse_script(spread), compute_facts) == []
+
+
+def test_mem_per_gpu_is_a_memory_request():
+    script = "#SBATCH -p gpu\n#SBATCH --gres=gpu:1\n#SBATCH -c 8\n#SBATCH -t 1:00:00\n"
+    warnings = policy_warnings(parse_script(script + "#SBATCH --mem-per-gpu=40G\n"))
+    assert not any("no --mem" in w for w in warnings)
+    assert any("no --mem" in w for w in policy_warnings(parse_script(script)))
+
+
+def test_command_line_flags_override_the_script():
+    request = parse_script(CPU_SCRIPT, ["-p", "gpu", "--time=02:00:00", "--gres=gpu:1"])
+    assert request.partition == "gpu"
+    assert request.time_seconds == 7200
+    assert request.gpus == 1
+    assert request.account == "pi-example"  # untouched lines still come from the script
+
+
+def test_the_sbatch_flags_stop_at_the_script():
+    from cloudfit.guard import sbatch_flags
+
+    tokens = ["cd", "runs", "&&", "sbatch", "-p", "gpu", "--parsable", "job.sh", "--lr", "3e-4"]
+    assert sbatch_flags(tokens) == ["-p", "gpu", "--parsable"]
+    assert sbatch_flags(["squeue", "-u", "me"]) == []
+
+
+def test_only_gcloud_creating_a_vm_is_held_to_a_deadline():
+    assert launch_without_max_run_duration(["echo", "compute", "instances", "create"]) is None
+    create = ["/opt/google-cloud-sdk/bin/gcloud", "beta", "compute", "instances", "create", "vm"]
+    assert "outlive" in launch_without_max_run_duration(create)
+    assert "outlive" in launch_without_max_run_duration(
+        ["gcloud", "compute", "instances", "create-with-container", "vm"])
+
+
+def test_a_termination_time_bounds_a_vm_and_a_termination_action_alone_does_not():
+    create = ["gcloud", "compute", "instances", "create", "vm"]
+    assert launch_without_max_run_duration([*create, "--termination-time=2026-09-24T00:00:00Z"]) is None
+    spot = [*create, "--provisioning-model=SPOT", "--instance-termination-action=DELETE"]
+    assert "outlive" in launch_without_max_run_duration(spot)

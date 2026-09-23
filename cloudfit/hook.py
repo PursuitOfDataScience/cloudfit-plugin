@@ -60,13 +60,16 @@ def evaluate_command(command: str, *, runner=None,
     except OSError:
         return None  # sbatch will report a missing script better than we can
 
-    request = _guard.parse_script(text)
+    # `sbatch -p gpu --gres=gpu:1 job.sh` overrides the script's own lines, so a
+    # check that read only the file would refuse a submission sbatch accepts.
+    flags = _guard.sbatch_flags(tokens)
+    request = _guard.parse_script(text, flags)
     site = _site_facts(runner)
     facts = None
     name = request.partition or site.default_partition
     if name and (runner is not None or request.partition):
         facts = _partition_facts(name, runner)
-    checked = _guard.check_script(text, facts, site)
+    checked = _guard.check_script(text, facts, site, flags)
 
     if checked.refusals:
         return decision("deny", _bullets(

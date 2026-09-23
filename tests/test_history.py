@@ -210,3 +210,68 @@ def test_a_legacy_sacct_row_keeps_its_own_reading(tmp_path):
     (obs,) = read_record("linalg", directory=tmp_path)
     assert not obs.mem_peak_is_lifetime
     assert obs.mem_peak_trusted_bytes == 4000000000
+
+
+def test_a_running_job_in_sacct_is_live_not_finished():
+    """Its elapsed so far is a floor; read as finished it cut a 12h job's --time to 01:15:00."""
+    rows = ("59500001|longjob|compute|RUNNING|8|32Gn||01:10:00|01:00:00|12:00:00|"
+            "billing=8,cpu=8,mem=32G,node=1\n"
+            "59500002|longjob|compute|COMPLETED|8|32Gn||09:00:00|10:00:00|12:00:00|"
+            "billing=8,cpu=8,mem=32G,node=2\n")
+    running, done = observations_from_sacct(rows)
+    assert (running.kind, done.kind) == ("sample", "final")
+    assert done.node_count == 2
+    assert done.cores_scope == "job"  # CPU-seconds cover every task on every node
+
+
+def test_repeated_snapshots_of_one_job_are_one_run(record_home):
+    """Measured four times, one job read as four agreeing runs: a recommendation from one job."""
+    for cores, elapsed in ((2.0, 60), (7.5, 120), (3.0, 180), (4.0, 240)):
+        record(Observation(source="slurmwatch", workload="alpha", job_id="1",
+                           cores_used=cores, elapsed_seconds=elapsed))
+    record(Observation(source="slurmwatch", workload="alpha", job_id="2", cores_used=1.0))
+    first, second = read_record("alpha")
+    assert first.job_id == "1"
+    assert first.cores_used == 7.5  # the busiest snapshot, not the last one
+    assert first.elapsed_seconds == 240
+    assert second.job_id == "2"
+
+
+def test_one_job_seen_by_two_sources_is_still_one_run():
+    from cloudfit.decide import one_per_run
+
+    live = Observation(source="slurmwatch", job_id="5", cores_used=3.0)
+    same = Observation(source="sacct", job_id="5", cores_used=2.5, cores_basis="average")
+    rollup = Observation(source="slurmpast", kind="rollup", runs=40, cores_used=1.0)
+    assert one_per_run([live, same, rollup]) == [live, rollup]
+
+
+def test_slurmpast_times_the_work_from_completed_runs_only():
+    """14 runs of the gpu entry, 4 of them completed: the walltime axis is n=4."""
+    runner = FakeRunner().on("slurmpast", stdout=SLURMPAST)
+    result = from_slurmpast("software", runner, partition="gpu")
+    timed = next(o for o in result.observations if o.elapsed_seconds)
+    assert timed.runs == 4
+    cores = next(o for o in result.observations if o.cores_used)
+    assert cores.cores_scope == "task"  # slurmpast reports cores per task
+
+
+def test_slurmpast_cautions_travel_with_the_answer():
+    runner = FakeRunner().on("slurmpast", stdout=SLURMPAST)
+    result = from_slurmpast("software", runner, partition="gpu")
+    assert any("this workload runs 2" in n for n in result.notes)
+    assert any("may be low" in n for n in result.notes)
+
+
+def test_sacct_and_the_record_read_the_partition_the_script_runs_on(record_home):
+    rows = ("1|train|gpu|COMPLETED|8|64Gn||80:00:00|10:00:00|12:00:00|cpu=8,gres/gpu=1,node=1\n"
+            "2|train|cpu|COMPLETED|8|64Gn||01:00:00|00:50:00|12:00:00|cpu=8,node=1\n")
+    runner = FakeRunner().absent("slurmpast").on("sacct", stdout=rows)
+    assert [o.job_id for o in history("train", runner=runner, partition="gpu").observations] == ["1"]
+    # A partition this workload never ran on narrows to nothing, so it falls back to every run.
+    assert len(history("train", runner=runner, partition="bigmem").observations) == 2
+
+    record(Observation(source="slurmwatch", workload="own", job_id="3", partition="gpu"))
+    record(Observation(source="slurmwatch", workload="own", job_id="4", partition="cpu"))
+    empty = FakeRunner().absent("slurmpast").absent("sacct")
+    assert [o.job_id for o in history("own", runner=empty, partition="cpu").observations] == ["4"]
